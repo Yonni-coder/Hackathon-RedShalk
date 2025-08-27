@@ -5,8 +5,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server.js",
-    "db:export": "mysqldump -u root -p doculink > db/dump.sql",
-    "db:import": "mysql -u root -p doculink < db/dump.sql"
+    "db:export": "mysqldump -u root -p vahatra_center > db/dump.sql",
+    "db:import": "mysql -u root -p vahatra_center < db/dump.sql"
   },
   "author": "",
   "license": "ISC",

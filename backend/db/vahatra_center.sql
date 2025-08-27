@@ -1,111 +1,149 @@
--- ===========================
--- Création base + tables (MySQL/MariaDB)
--- ===========================
+-- phpMyAdmin SQL Dump
+-- version 5.2.1
+-- https://www.phpmyadmin.net/
+--
+-- Hôte : 127.0.0.1
+-- Généré le : mer. 27 août 2025 à 17:55
+-- Version du serveur : 11.6.2-MariaDB
+-- Version de PHP : 8.0.30
+USE `vahatra_center`;
 
--- 1) Création DB
-CREATE DATABASE IF NOT EXISTS vahatra_center
-  CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE vahatra_center;
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
 
--- 2) Rôles
-DROP TABLE IF EXISTS roles;
-CREATE TABLE roles (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  nom VARCHAR(50) NOT NULL UNIQUE
-);
-INSERT IGNORE INTO roles (nom) VALUES ('admin'),('gestionnaire'),('agent'),('client');
 
--- 3) Utilisateurs
-DROP TABLE IF EXISTS utilisateurs;
-CREATE TABLE utilisateurs (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  courriel VARCHAR(255) NOT NULL UNIQUE,
-  mot_de_passe_hash VARCHAR(255) NOT NULL,
-  nom_complet VARCHAR(255),
-  telephone VARCHAR(50),
-  cree_le DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  maj_le DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
 
--- 4) Ressources
-DROP TABLE IF EXISTS ressources;
-CREATE TABLE ressources (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  nom VARCHAR(255) NOT NULL,
-  type_ressource ENUM('salle','bureau') NOT NULL,
-  capacite INT NOT NULL,
-  emplacement VARCHAR(255),
-  est_actif TINYINT(1) NOT NULL DEFAULT 1,
-  cree_le DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  maj_le DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+--
+-- Base de données : `vahatra_center`
+--
 
--- 5) Tarifs
-DROP TABLE IF EXISTS tarifs;
-CREATE TABLE tarifs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    ressource_id INT NOT NULL,
-    nom VARCHAR(100) NOT NULL,
-    prix_par_heure DECIMAL(10, 2) DEFAULT NULL,
-    prix_par_jour DECIMAL(10, 2) DEFAULT NULL,
-    devise VARCHAR(10) NOT NULL DEFAULT 'MGA',
-    est_actif TINYINT(1) NOT NULL DEFAULT 1,
-    cree_le DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    maj_le DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_tarif_ressource FOREIGN KEY (ressource_id) REFERENCES ressources(id) ON DELETE CASCADE
-);
+-- --------------------------------------------------------
 
--- 6) Réservations
-DROP TABLE IF EXISTS reservations;
-CREATE TABLE reservations (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  ressource_id INT NOT NULL,
-  utilisateur_id INT NULL,
-  debut DATETIME NOT NULL,
-  fin DATETIME NOT NULL,
-  statut ENUM('en_attente','confirmee','annulee','rejettee') NOT NULL DEFAULT 'en_attente',
-  titre VARCHAR(255) NULL,
-  description TEXT NULL,
-  prix DECIMAL(10,2) NOT NULL DEFAULT 0,
-  devise VARCHAR(10) NOT NULL DEFAULT 'MGA',
-  statut_paiement ENUM('aucun','en_attente','paye','echoue','rembourse') NOT NULL DEFAULT 'aucun',
-  annule_par INT NULL,
-  raison_annulation TEXT NULL,
-  cree_le DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  maj_le DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  CONSTRAINT fk_res_ressource FOREIGN KEY (ressource_id) REFERENCES ressources(id) ON DELETE CASCADE,
-  CONSTRAINT fk_res_utilisateur FOREIGN KEY (utilisateur_id) REFERENCES utilisateurs(id) ON DELETE SET NULL,
-  CONSTRAINT fk_res_annule_par FOREIGN KEY (annule_par) REFERENCES utilisateurs(id) ON DELETE SET NULL,
-  CONSTRAINT chk_res_temps CHECK (debut < fin)
-);
-CREATE INDEX idx_res_ressource_temps ON reservations (ressource_id, debut, fin);
-CREATE INDEX idx_res_statut ON reservations (statut);
+--
+-- Structure de la table `companies`
+--
+SET FOREIGN_KEY_CHECKS = 0;
 
--- 7) Verrous de réservation
-DROP TABLE IF EXISTS verrous_reservation;
-CREATE TABLE verrous_reservation (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  ressource_id INT NOT NULL,
-  session_utilisateur_id VARCHAR(255) NOT NULL,
-  debut DATETIME NOT NULL,
-  fin DATETIME NOT NULL,
-  verrouille_jusqua DATETIME NOT NULL,
-  cree_le DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_vr_ressource FOREIGN KEY (ressource_id) REFERENCES ressources(id) ON DELETE CASCADE,
-  CONSTRAINT chk_vr_temps CHECK (debut < fin)
-);
-CREATE INDEX idx_vr_ressource_verrouille_jusqua ON verrous_reservation(ressource_id, verrouille_jusqua);
+CREATE TABLE `companies` (
+  `id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `manager_id` int(11) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 8) Paiements
-DROP TABLE IF EXISTS paiements;
-CREATE TABLE paiements (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  reservation_id INT NULL,
-  montant DECIMAL(10,2) NOT NULL,
-  methode VARCHAR(50),
-  statut ENUM('en_attente','paye','echoue','rembourse') NOT NULL DEFAULT 'en_attente',
-  reference_fournisseur VARCHAR(255),
-  cree_le DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  maj_le DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  CONSTRAINT fk_paie_res FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE SET NULL
-);
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `roles`
+--
+
+CREATE TABLE `roles` (
+  `id` int(11) NOT NULL,
+  `nom` varchar(50) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `roles`
+--
+
+INSERT INTO `roles` (`id`, `nom`) VALUES
+(1, 'admin'),
+(4, 'client'),
+(3, 'employe'),
+(2, 'manager');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `users`
+--
+
+CREATE TABLE `users` (
+  `id` int(11) NOT NULL,
+  `fullname` varchar(100) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `role` enum('client','employee','manager','admin') NOT NULL,
+  `company_id` int(11) DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT 1,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `phone` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Déchargement des données de la table `users`
+--
+
+INSERT INTO `users` (`id`, `fullname`, `email`, `password`, `role`, `company_id`, `is_active`, `created_at`, `phone`) VALUES
+(1, 'Yonni Tinogny', 'exemple@test.com', '$2b$10$a3odMdXllXxNIfF46EJADO59s0CRLcdhWYGVbsj5VbJckc1wq2bFm', 'client', NULL, 1, '2025-08-27 15:32:22', '+261330000000'),
+(4, 'Yonni Tinogny', 'exempl2e@test.com', '$2b$10$9w2B6IKWYXV3R4rKQin5R.qhuu0qh9Ichbu//HIK5UgqkR3tOlZF.', 'client', NULL, 1, '2025-08-27 15:48:20', '+261330000000');
+
+--
+-- Index pour les tables déchargées
+--
+
+--
+-- Index pour la table `companies`
+--
+ALTER TABLE `companies`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `manager_id` (`manager_id`);
+
+--
+-- Index pour la table `roles`
+--
+ALTER TABLE `roles`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `nom` (`nom`);
+
+--
+-- Index pour la table `users`
+--
+ALTER TABLE `users`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `email` (`email`),
+  ADD KEY `company_id` (`company_id`);
+
+--
+-- AUTO_INCREMENT pour les tables déchargées
+--
+
+--
+-- AUTO_INCREMENT pour la table `companies`
+--
+ALTER TABLE `companies`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `roles`
+--
+ALTER TABLE `roles`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT pour la table `users`
+--
+ALTER TABLE `users`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- Contraintes pour les tables déchargées
+--
+
+--
+-- Contraintes pour la table `users`
+--
+ALTER TABLE `users`
+  ADD CONSTRAINT `users_ibfk_1` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE CASCADE;
+
+  SET FOREIGN_KEY_CHECKS = 1;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
