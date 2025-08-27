@@ -1,13 +1,13 @@
--- MariaDB dump 10.19  Distrib 10.4.32-MariaDB, for Win64 (AMD64)
+-- MySQL dump 10.13  Distrib 8.0.42, for Win64 (x86_64)
 --
 -- Host: localhost    Database: vahatra_center
 -- ------------------------------------------------------
--- Server version	11.6.2-MariaDB
+-- Server version	5.5.5-10.4.32-MariaDB
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
+/*!50503 SET NAMES utf8mb4 */;
 /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
 /*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
@@ -21,7 +21,7 @@
 
 DROP TABLE IF EXISTS `companies`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `companies` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(100) NOT NULL,
@@ -47,12 +47,97 @@ INSERT INTO `companies` VALUES (1,'Vahatra',NULL,'2025-08-27 18:14:30','contact@
 UNLOCK TABLES;
 
 --
+-- Table structure for table `ressource_photos`
+--
+
+DROP TABLE IF EXISTS `ressource_photos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ressource_photos` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `ressource_id` int(11) NOT NULL,
+  `photo_url` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ressource_id` (`ressource_id`),
+  CONSTRAINT `ressource_photos_ibfk_1` FOREIGN KEY (`ressource_id`) REFERENCES `ressources` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `ressource_photos`
+--
+
+LOCK TABLES `ressource_photos` WRITE;
+/*!40000 ALTER TABLE `ressource_photos` DISABLE KEYS */;
+/*!40000 ALTER TABLE `ressource_photos` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `ressource_types`
+--
+
+DROP TABLE IF EXISTS `ressource_types`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ressource_types` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `ressource_types`
+--
+
+LOCK TABLES `ressource_types` WRITE;
+/*!40000 ALTER TABLE `ressource_types` DISABLE KEYS */;
+/*!40000 ALTER TABLE `ressource_types` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `ressources`
+--
+
+DROP TABLE IF EXISTS `ressources`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ressources` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `capacity` int(11) DEFAULT NULL,
+  `availability` varchar(255) DEFAULT NULL,
+  `location` varchar(255) NOT NULL,
+  `status` enum('libre','reserve','indisponible') DEFAULT 'libre',
+  `company_id` int(11) NOT NULL,
+  `type_id` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `company_id` (`company_id`),
+  KEY `type_id` (`type_id`),
+  CONSTRAINT `ressources_ibfk_1` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `ressources_ibfk_2` FOREIGN KEY (`type_id`) REFERENCES `ressource_types` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `ressources`
+--
+
+LOCK TABLES `ressources` WRITE;
+/*!40000 ALTER TABLE `ressources` DISABLE KEYS */;
+/*!40000 ALTER TABLE `ressources` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `roles`
 --
 
 DROP TABLE IF EXISTS `roles`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `roles` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `nom` varchar(50) NOT NULL,
@@ -72,12 +157,42 @@ INSERT INTO `roles` VALUES (1,'admin'),(4,'client'),(3,'employe'),(2,'manager');
 UNLOCK TABLES;
 
 --
+-- Table structure for table `tarifs`
+--
+
+DROP TABLE IF EXISTS `tarifs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tarifs` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `ressource_id` int(11) NOT NULL,
+  `tarif_h` decimal(10,2) DEFAULT NULL,
+  `tarif_j` decimal(10,2) DEFAULT NULL,
+  `tarif_sem` decimal(10,2) DEFAULT NULL,
+  `tarif_mois` decimal(10,2) DEFAULT NULL,
+  `tarif_an` decimal(10,2) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ressource_id` (`ressource_id`),
+  CONSTRAINT `tarifs_ibfk_1` FOREIGN KEY (`ressource_id`) REFERENCES `ressources` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `tarifs`
+--
+
+LOCK TABLES `tarifs` WRITE;
+/*!40000 ALTER TABLE `tarifs` DISABLE KEYS */;
+/*!40000 ALTER TABLE `tarifs` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `users`
 --
 
 DROP TABLE IF EXISTS `users`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
+/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `fullname` varchar(100) NOT NULL,
@@ -114,4 +229,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-08-27 22:08:19
+-- Dump completed on 2025-08-28  1:13:38
