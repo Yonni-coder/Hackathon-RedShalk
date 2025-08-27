@@ -5,9 +5,12 @@ import Logo from "../design/logo"
 import ActiveLink from "./active-link"
 import { Building2, Calendar, ChevronDown, Eye, Gift, Home, Menu, User, X } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu"
-import { Button } from "../ui/button"
+import { Button, buttonVariants } from "../ui/button"
 import { useState } from "react"
 import ToggleTheme from "./toggle-theme"
+import Link from "next/link"
+import { size } from "zod"
+import { cn } from "@/lib/utils"
  
 export default function Navbar () {
     const [isOpen, setIsOpen] = useState(false)
@@ -118,13 +121,16 @@ export default function Navbar () {
                             whileHover={{ scale: 1.05 }} 
                             whileTap={{ scale: 0.95 }}
                         >
-                        <Button 
-                            variant="outline" 
-                            size="icon"
-                            className="rounded-xl px-4 py-2 transition-colors duration-300"
+                        <Link 
+                            href="/sign-in"
+                            className={cn(
+                                buttonVariants({
+                                variant: "outline",
+                                size: "icon"
+                            }), "rounded-xl px-4 py-2 transition-colors duration-300")}
                         >
                             <User  />
-                        </Button>
+                        </Link>
                     </motion.div>
                     <ToggleTheme />
                 </div>

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import { ThemeProvider } from "next-themes"
 import Wrapper from "@/components/container/wrapper"
 import NextTopLoader from "nextjs-toploader"
+import { Toaster } from "sonner"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,6 +31,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <Toaster position="top-center" richColors />
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
