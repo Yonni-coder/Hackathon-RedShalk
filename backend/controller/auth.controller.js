@@ -5,7 +5,9 @@ const jwt = require("jsonwebtoken");
 // Inscription
 exports.signup = async (req, res) => {
   try {
-    const { email, password, role, fullname, phone, compagnie_id } = req.body;
+    const { email, password, role, nom, prenom, phone, compagnie_id } =
+      req.body;
+    const fullname = `${nom} ${prenom}`;
 
     if (!email || !password) {
       return res.status(400).json({ message: "Email et mot de passe requis" });
