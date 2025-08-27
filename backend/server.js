@@ -27,6 +27,8 @@ app.use("/api", validationRoutes);
 app.use("/api", companyRoutes);
 //recuperer les roles
 app.use("/api/roles", require("./routes/role.routes"));
+//Route reservation
+app.use("/api/reservations", require("./routes/reservation.routes"));
 
 // Gestion des erreurs JSON mal formattées
 app.use((error, req, res, next) => {
