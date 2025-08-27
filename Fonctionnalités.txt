@@ -1,0 +1,20 @@
+Fonctionnalités — liste priorisée
+MVP (indispensable)
+
+Gestion des comptes & rôles (Super-admin, Admin, Agent, Client, Lecteur)
+
+Authentification (email + mot de passe) et gestion des droits
+
+Catalogue des ressources (salles, bureaux, coworking : nom, capacité, équipements, photos, tarifs)
+
+Calendrier centralisé (vue par ressource / jour / semaine / mois)
+
+Processus de réservation client (sélection → créneau → formulaire → réservation provisoire)
+
+Verrouillage temporaire de créneau (session lock)
+
+Confirmation atomique côté serveur (transactions anti-chevauchement)
+
+Workflow de validation (auto-validation et approbation manuelle)
+
+Notifications (email : confirmation, rappel, annulation ; notifications internes)
