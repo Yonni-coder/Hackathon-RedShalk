@@ -3,7 +3,8 @@ const db = require("../db/connectDB");
 
 const authMiddleware = async (req, res, next) => {
   try {
-    const token = req.header("Authorization")?.replace("Bearer ", "");
+    // Récupérer le token depuis les cookies
+    const token = req.cookies.token;
 
     if (!token) {
       return res
