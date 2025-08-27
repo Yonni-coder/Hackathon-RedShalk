@@ -5,9 +5,7 @@ const jwt = require("jsonwebtoken");
 // Inscription
 exports.signup = async (req, res) => {
   try {
-    const { email, password, role, nom, prenom, phone, compagnie_id } =
-      req.body;
-    const fullname = `${nom} ${prenom}`;
+    const { email, password, role, fullname, phone, company_id } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ message: "Email et mot de passe requis" });
@@ -35,7 +33,7 @@ exports.signup = async (req, res) => {
         role,
         fullname,
         phone,
-        compagnie_id || null,
+        company_id || null,
         is_active,
       ]
     );
@@ -96,13 +94,22 @@ exports.login = async (req, res) => {
     // Générer un token JWT
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || "votre_secret_jwt",
       { expiresIn: "24h" }
     );
 
+    // Définir le cookie HttpOnly
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // en production, utilisez HTTPS
+      sameSite: "strict",
+      maxAge: 24 * 60 * 60 * 1000, // 24 heures
+    });
+    //Recuperer toutes les infos sur le company
+    //
+
     res.json({
       message: "Connexion réussie",
-      token,
       user: {
         id: user.id,
         email: user.email,
@@ -115,4 +122,14 @@ exports.login = async (req, res) => {
     console.error(error);
     res.status(500).json({ message: "Erreur lors de la connexion" });
   }
+};
+
+// Déconnexion
+exports.logout = (req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+  res.json({ message: "Déconnexion réussie" });
 };

@@ -2,7 +2,7 @@ const db = require("../db/connectDB");
 
 const checkSignup = async (req, res, next) => {
   try {
-    const { email, role, company_id } = req.body;
+    const { email, role, company_id } = req.body; // Changer compagnie_id en company_id
 
     // Vérifier les champs obligatoires
     if (!email) {
@@ -46,7 +46,7 @@ const checkSignup = async (req, res, next) => {
       if (companyRows.length === 0) {
         return res
           .status(400)
-          .json({ message: "compagnie_id invalide ou entreprise inactive" });
+          .json({ message: "company_id invalide ou entreprise inactive" });
       }
     }
 

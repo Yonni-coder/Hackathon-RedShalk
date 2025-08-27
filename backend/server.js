@@ -3,8 +3,10 @@ const bodyParser = require("body-parser");
 const app = express();
 const cors = require("cors");
 require("dotenv").config();
+const cookeParser = require("cookie-parser");
 
 // Middleware pour parser le JSON
+app.use(cookeParser());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(
