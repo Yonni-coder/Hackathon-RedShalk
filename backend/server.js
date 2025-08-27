@@ -15,6 +15,8 @@ const companyRoutes = require("./routes/companies.routes");
 app.use("/api/auth", authRoutes);
 app.use("/api", validationRoutes);
 app.use("/api", companyRoutes);
+//recuperer les roles
+app.use("/api/roles", require("./routes/role.routes"));
 
 // Gestion des erreurs JSON mal formattées
 app.use((error, req, res, next) => {
