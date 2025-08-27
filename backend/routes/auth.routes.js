@@ -6,6 +6,6 @@ const jwt = require("jsonwebtoken");
 const { signup } = require("../controller/auth.controller");
 const checkSignup = require("../middleware/checksignup");
 
-router.post("/signup", signup, checkSignup);
+router.post("/signup", checkSignup, signup);
 
 module.exports = router;

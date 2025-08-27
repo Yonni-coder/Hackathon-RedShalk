@@ -25,6 +25,7 @@ app.use(cookieParser());
 
 // === Routes principales ===
 app.use("/api/auth", require("./routes/auth.routes"));
+app.use("/api/roles", require("./routes/role.routes"));
 
 // gestion des erreurs 404
 app.use((req, res) => {
