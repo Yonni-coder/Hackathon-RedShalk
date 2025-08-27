@@ -37,7 +37,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
             <NextTopLoader
-              color="#155cfa"
+              color="#fd2055"
               initialPosition={0.08}
               crawlSpeed={200}
               height={3}
@@ -45,7 +45,7 @@ export default function RootLayout({
               crawl={true}
               easing="ease"
               speed={200}
-              shadow="0 0 10px #155cfa,0 0 5px #155cfa"
+              shadow="0 0 10px #fd2055,0 0 5px #fd2055"
               zIndex={1600}
               showAtBottom={false}
             />
