@@ -16,11 +16,11 @@ const checkSignup = async (req, res, next) => {
     }
 
     // Empêcher l'inscription directe en tant qu'admin
-    if (role === "admin") {
-      return res
-        .status(403)
-        .json({ message: "Inscription en tant qu'admin non autorisée" });
-    }
+    // if (role === "admin") {
+    //   return res
+    //     .status(403)
+    //     .json({ message: "Inscription en tant qu'admin non autorisée" });
+    // }
 
     // Vérifier si l'email existe déjà
     const [rows] = await db.query("SELECT * FROM users WHERE email = ?", [
