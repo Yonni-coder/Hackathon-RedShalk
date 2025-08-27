@@ -6,6 +6,7 @@ Gestion des comptes & rôles (Super-admin, Admin, Agent, Client, Lecteur)
 Authentification (email + mot de passe) et gestion des droits
 
 Catalogue des ressources (salles, bureaux, coworking : nom, capacité, équipements, photos, tarifs)
+Reservation de salle(num de salle, date debut, date fin, ) ou bureaux
 
 Calendrier centralisé (vue par ressource / jour / semaine / mois)
 
