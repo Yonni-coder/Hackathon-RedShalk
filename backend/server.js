@@ -1,39 +1,35 @@
-require("dotenv").config();
 const express = require("express");
+const bodyParser = require("body-parser");
 const app = express();
-const db = require("./db/connectDB");
-const cors = require("cors");
-const path = require("path");
-const cookieParser = require("cookie-parser");
 
-// middleware pour injecter le pool DB dans req
-app.use((req, _, next) => {
-  req.db = db;
+// Middleware pour parser le JSON
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Import des routes
+const authRoutes = require("./routes/auth.routes");
+const validationRoutes = require("./routes/validation.routes");
+const companyRoutes = require("./routes/companies.routes");
+
+// Utilisation des routes
+app.use("/api/auth", authRoutes);
+app.use("/api", validationRoutes);
+app.use("/api", companyRoutes);
+
+// Gestion des erreurs JSON mal formattées
+app.use((error, req, res, next) => {
+  if (error instanceof SyntaxError && error.status === 400 && "body" in error) {
+    return res.status(400).json({ message: "JSON mal formatté" });
+  }
   next();
 });
 
-// parsers
-app.use(express.json());
-app.use(
-  cors({
-    origin: process.env.FRONT_URL,
-    credentials: true,
-  })
-);
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-
-// === Routes principales ===
-app.use("/api/auth", require("./routes/auth.routes"));
-app.use("/api/roles", require("./routes/role.routes"));
-
-// gestion des erreurs 404
-app.use((req, res) => {
-  res.status(404).json({ message: "Route non trouvée" });
+// Route de base
+app.get("/", (req, res) => {
+  res.json({ message: "API Vahatra Center" });
 });
 
-// démarrage
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
-  console.log(` Backend démarré sur http://localhost:${PORT}/api`);
+  console.log(`Backend démarré sur http://localhost:${PORT}/api`);
 });
