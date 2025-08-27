@@ -1,10 +1,18 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
+const cors = require("cors");
+require("dotenv").config();
 
 // Middleware pour parser le JSON
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(
+  cors({
+    origin: process.env.FRONT_URL,
+    credentials: true,
+  })
+);
 
 // Import des routes
 const authRoutes = require("./routes/auth.routes");
