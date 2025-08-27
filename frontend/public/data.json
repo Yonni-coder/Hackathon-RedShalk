@@ -1,0 +1,32 @@
+{
+    "footer": {
+    "about": {
+      "title": "À propos",
+      "text": "Notre bibliothèque virtuelle offre un accès facile à une vaste collection de livres, ressources éducatives en ligne."
+    },
+    "usefulLinks": {
+      "title": "Liens utiles",
+      "links": [
+        { "icon": "HelpCircle", "label": "Aide", "href": "/help" },
+        { "icon": "FileText", "label": "Conditions Génerales d'utilisation", "href": "/cgu" },
+        { "icon": "Mail", "label": "Contact", "href": "/contact" }
+      ]
+    },
+    "contact": {
+      "title": "Contactez-nous",
+      "items": [
+        { "icon": "Mail", "text": "support@bibliovirtuelle.com" },
+        { "icon": "Phone", "text": "+261 34 12 345 67" },
+        { "icon": "MapPin", "text": "ESP, Antsiranana" }
+      ]
+    },
+    "socials": {
+      "title": "Suivez-nous",
+      "links": [
+        { "icon": "Facebook", "label": "Facebook", "href": "#" },
+        { "icon": "Twitter", "label": "Twitter", "href": "#" },
+        { "icon": "Instagram", "label": "Instagram", "href": "#" }
+      ]
+    }
+  }
+}

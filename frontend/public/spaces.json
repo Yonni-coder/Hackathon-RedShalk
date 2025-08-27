@@ -1,0 +1,68 @@
+[
+  {
+    "id": 1,
+    "name": "Salle de Collaboration Moderne",
+    "type": "Collaboration",
+    "capacity": "8-12 personnes",
+    "price": "25 000 Ar/heure",
+    "image": "/assets/images/all/dane-deaner-_-KLkj7on_c-unsplash.jpg",
+    "features": ["Écran 65\"", "Wifi haut débit", "Climatisation", "Tableau blanc"],
+    "rating": 4.8,
+    "available": true
+  },
+  {
+    "id": 2,
+    "name": "Bureau Privé Exécutif",
+    "type": "Bureau",
+    "capacity": "1-2 personnes",
+    "price": "15 000 Ar/jour",
+    "image": "/assets/images/all/danielle-cerullo-dN7085rORJo-unsplash.jpg",
+    "features": ["Bureau ergonomique", "Fauteuil premium", "Rangement", "Vue panoramique"],
+    "rating": 4.9,
+    "available": true
+  },
+  {
+    "id": 3,
+    "name": "Espace Événement Premium",
+    "type": "Événement",
+    "capacity": "50-100 personnes",
+    "price": "80 000 Ar/jour",
+    "image": "/assets/images/all/nastuh-abootalebi-rSpMla5RItA-unsplash.jpg",
+    "features": ["Scène équipée", "Éclairage pro", "Système audio", "Catering possible"],
+    "rating": 4.7,
+    "available": false
+  },
+  {
+    "id": 4,
+    "name": "Salle de Réunion Cosy",
+    "type": "Collaboration",
+    "capacity": "4-6 personnes",
+    "price": "18 000 Ar/heure",
+    "image": "/assets/images/all/smartworks-coworking-E7Tzh2TTS6c-unsplash.jpg",
+    "features": ["Ambiance chaleureuse", "Éclairage naturel", "Café inclus", "Projecteur"],
+    "rating": 4.6,
+    "available": true
+  },
+  {
+    "id": 5,
+    "name": "Open Space Créatif",
+    "type": "Bureau",
+    "capacity": "10-15 personnes",
+    "price": "12 000 Ar/personne/jour",
+    "image": "/assets/images/all/toa-heftiba-FV3GConVSss-unsplash.jpg",
+    "features": ["Espaces modulables", "Plantes vertes", "Zone détente", "Imprimante"],
+    "rating": 4.5,
+    "available": true
+  },
+  {
+    "id": 6,
+    "name": "Auditorium Professionnel",
+    "type": "Événement",
+    "capacity": "100-200 personnes",
+    "price": "120 000 Ar/jour",
+    "image": "/assets/images/all/yann-maignan-rRiAzFkJPMo-unsplash.jpg",
+    "features": ["Gradins confortables", "Écran géant", "Micro sans fil", "Enregistrement"],
+    "rating": 4.9,
+    "available": true
+  }
+]
