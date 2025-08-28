@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useEffect, useState } from "react"
-import { motion } from "framer-motion"
+import { AnimatePresence, motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -29,7 +29,7 @@ const registerSchema = z.object({
     role: z.enum(["admin", "employe", "client", "manager"], {
         required_error: "Veuillez sélectionner un rôle",
     }),
-    company_id: z.number(),
+    company_id: z.number().optional(),
     password: z.string().min(6, "Le mot de passe doit contenir au moins 6 caractères"),
 })
 
@@ -41,6 +41,8 @@ export default function RegisterPage() {
     const [roles, setRoles] = useState([])
     const [companies, setCompanies] = useState([])
     const [loading, setLoading] = useState(false)
+    const [companiesLoading, setCompaniesLoading] = useState(true)
+    const [selectedRole, setSelectedRole] = useState<string>("")
 
     const {
         register,
@@ -67,6 +69,7 @@ export default function RegisterPage() {
             }
         }
         const loadCompanies = async () => {
+            setCompaniesLoading(true)
             try {
                 const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/companies`, {
                     method: "GET"
@@ -75,6 +78,8 @@ export default function RegisterPage() {
                 setCompanies(data)
             } catch (err) {
                 console.error(err)
+            } finally {
+                setCompaniesLoading(false)
             }
         }
         loadCompanies()
@@ -100,8 +105,10 @@ export default function RegisterPage() {
                 }),
             })
             const result = await response.json()
-            toast.success("Inscription réussie")
-            reset()
+            if (response.ok) {
+                toast.success("Inscription réussie")
+                reset()
+            }
             if (!response.ok) {
                 toast.error("Une Erreur est survenue")
             }
@@ -227,57 +234,83 @@ export default function RegisterPage() {
                                         initial={{ opacity: 0, x: -20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ delay: 0.8 }}
-                                        className="flex items-center gap-2"
+                                        className="flex items-center gap-2 w-full"
                                     >
+                                        {/* Champ Rôle */}
                                         <div className="flex-1 space-y-2">
                                             <Label htmlFor="role" className="text-sm font-medium">
-                                                Rôle : <span className="text-sm text-red-500">*</span>
+                                            Rôle : <span className="text-sm text-red-500">*</span>
                                             </Label>
                                             <div className="relative">
-                                                <Select onValueChange={(val) => setValue("role", val as any, { shouldValidate: true })}>
-                                                    <SelectTrigger className="w-full">
-                                                        <SelectValue placeholder="Choisir votre rôle" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {roles?.map((role, index) => (
-                                                            <SelectItem key={index} value={role?.nom}>
-                                                                {rolesTranslations[role?.nom]}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
+                                            <Select
+                                                onValueChange={(val) => {
+                                                setValue("role", val as any, { shouldValidate: true });
+                                                setSelectedRole(val);
+                                                }}
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                <SelectValue placeholder="Choisir votre rôle" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                {roles?.map((role, index) => (
+                                                    <SelectItem key={index} value={role?.nom}>
+                                                    {rolesTranslations[role?.nom]}
+                                                    </SelectItem>
+                                                ))}
+                                                </SelectContent>
+                                            </Select>
                                             </div>
-                                            {errors.role && 
-                                                <span className="text-xs text-red-500">
-                                                    {errors.role.message}
-                                                </span>
-                                            }
+                                            {errors.role && (
+                                            <span className="text-xs text-red-500">{errors.role.message}</span>
+                                            )}
                                         </div>
-                                        <div className="flex-1 space-y-2">
-                                            <Label htmlFor="entreprise" className="text-sm font-medium">
-                                                Entreprise : <span className="text-sm text-red-500">*</span>
-                                            </Label>
-                                            <div className="relative">
-                                                <Select onValueChange={(val) => setValue("company_id", Number(val) as any, { shouldValidate: true })}>
+
+                                        {/* Champ Entreprise (affiché seulement si role !== client) */}
+                                        <AnimatePresence mode="wait">
+                                            {selectedRole !== "client" && (
+                                            <motion.div
+                                                key="company-field"
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -10 }}
+                                                transition={{ duration: 0.3 }}
+                                                className="flex-1 mt-1.5 space-y-2"
+                                            >
+                                                <Label>
+                                                Entreprise : <span className="text-red-500">*</span>
+                                                </Label>
+                                                <div className="relative">
+                                                {companiesLoading ? (
+                                                    <div className="flex items-center justify-center p-2">
+                                                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                                                    </div>
+                                                ) : (
+                                                    <Select
+                                                    onValueChange={(val) =>
+                                                        setValue("company_id", Number(val), { shouldValidate: true })
+                                                    }
+                                                    >
                                                     <SelectTrigger className="w-full">
                                                         <SelectValue placeholder="Choisir une entreprise" />
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         {companies?.map((company, index) => (
-                                                            <SelectItem key={index} value={company?.id.toString()}>
-                                                                {company?.name}
-                                                            </SelectItem>
+                                                        <SelectItem key={index} value={company?.id.toString()}>
+                                                            {company?.name}
+                                                        </SelectItem>
                                                         ))}
                                                     </SelectContent>
-                                                </Select>
-                                            </div>
-                                            {errors.company_id && 
-                                                <span className="text-xs text-red-500">
-                                                    {errors.company_id.message}
-                                                </span>
-                                            }
-                                        </div>
+                                                    </Select>
+                                                )}
+                                                </div>
+                                                {errors.company_id && (
+                                                <span className="text-xs text-red-500">{errors.company_id.message}</span>
+                                                )}
+                                            </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </motion.div>
+
 
                                     <Controller
   name="phone"
@@ -380,6 +413,20 @@ export default function RegisterPage() {
                                     </motion.div>
                                 </fieldset>
                             </form>
+
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 1.2 }}
+                                className="w-full text-center"
+                            >
+                                <Link
+                                    href="/sign-in"
+                                    className="text-primary text-sm hover:underline transition-all"
+                                >
+                                    Déjà Inscrit ?
+                                </Link>
+                            </motion.div>
 
                             <motion.div
                             initial={{ opacity: 0 }}
