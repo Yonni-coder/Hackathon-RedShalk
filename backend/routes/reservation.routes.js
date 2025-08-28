@@ -4,7 +4,7 @@ const {
   getAllReservations,
   getReservationById,
   createReservation,
-  updateReservationStatus,
+  updateReservation,
   deleteReservation,
   getReservationsByRessource,
   getRessourceAvailability,
@@ -33,7 +33,7 @@ router.patch(
   "/:id/status",
   checkReservationAccess,
   checkCompanyManager,
-  updateReservationStatus
+  updateReservation
 );
 
 // Supprimer une réservation
