@@ -7,7 +7,9 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Upload } from "lucide-react"
+import { useState } from "react"
 import { useForm } from "react-hook-form"
+import { toast } from "sonner"
 import * as z from "zod"
 
 export default function TypesForm () {
@@ -19,18 +21,44 @@ export default function TypesForm () {
     
     type typeFormValues = z.infer<typeof typeSchema>
 
+    const [loading, setLoading] = useState(false)
+
     const {
         register,
         handleSubmit,
         setValue,
+        reset,
         formState: { errors, isValid, isSubmitting },
     } = useForm<typeFormValues>({
         mode: "onTouched",
         resolver: zodResolver(typeSchema),
     })
 
-    const onSubmit = (data: typeFormValues) => {
-        console.log(data)
+    const onSubmit = async (data: typeFormValues) => {
+        setLoading(true)
+        try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/types/add`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                },
+                body: JSON.stringify({
+                    name: data.nom,
+                    description: data.description
+                }),
+            })
+            const result = await response.json()
+            toast.success("Ajout type réussie")
+            reset()
+            if (!response.ok) {
+                toast.error("Une Erreur est survenue")
+            }
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (
