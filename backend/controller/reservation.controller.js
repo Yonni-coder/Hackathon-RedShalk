@@ -163,7 +163,7 @@ exports.createReservation = async (req, res) => {
     if (!ressource_id) missingFields.push("ressource_id");
     if (!start_date) missingFields.push("start_date");
     if (!end_date) missingFields.push("end_date");
-    if (price === undefined || price === null) missingFields.push("price"); // Prix maintenant requis
+    if (price === undefined || price === null) missingFields.push("price"); // Prix requis
 
     if (missingFields.length > 0) {
       return res.status(400).json({
@@ -225,7 +225,7 @@ exports.createReservation = async (req, res) => {
       });
     }
 
-    // Vérifier les conflits de réservation (avec valeurs formatées)
+    // 1) Vérification de chevauchement au niveau datetime (précis)
     const hasConflict = await checkReservationConflict(
       ressource_id,
       formattedStart,
@@ -234,7 +234,34 @@ exports.createReservation = async (req, res) => {
     if (hasConflict) {
       return res.status(409).json({
         message: "Conflit de réservation",
-        details: "La ressource est déjà réservée pour cette période",
+        details:
+          "La ressource est déjà réservée pour cette période (chevauchement horaire).",
+      });
+    }
+
+    // 2) Vérification de chevauchement au niveau date-only (optionnelle)
+    //    On compare les dates (YYYY-MM-DD) : s'il existe une réservation dont la plage de dates
+    //    croise [start_date_date, end_date_date] => conflit.
+    const startDateOnly = formattedStart.split(" ")[0]; // "YYYY-MM-DD"
+    const endDateOnly = formattedEnd.split(" ")[0];
+
+    const [dateConflicts] = await db.query(
+      `
+        SELECT id FROM reservations
+        WHERE ressource_id = ?
+          AND status NOT IN ('cancelled', 'completed')
+          AND DATE(start_date) <= ? 
+          AND DATE(end_date) >= ?
+        LIMIT 1
+      `,
+      [ressource_id, endDateOnly, startDateOnly]
+    );
+
+    if (dateConflicts.length > 0) {
+      return res.status(409).json({
+        message: "Conflit de réservation (date)",
+        details:
+          "La ressource est déjà réservée pour l'une des dates demandées (au niveau jour).",
       });
     }
 
@@ -275,7 +302,6 @@ exports.createReservation = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    // Si checkReservationConflict a lancé une erreur pour dates invalides, renvoyer 400
     if (
       String(error).includes("Dates invalides") ||
       String(error).includes("Invalid dates")
@@ -511,7 +537,7 @@ exports.getRessourceAvailability = async (req, res) => {
           details: "Les dates de début et de fin doivent être valides",
         });
       }
-      // on garde l'ordre : param 1 = start_date_query, param 2 = end_date_query
+      // on garde l'ordre : param 1 = end_date_query, param 2 = start_date_query (logique SQL NOT overlap)
       query += " AND NOT (end_date <= ? OR start_date >= ?)";
       params.push(formattedStart, formattedEnd);
     }

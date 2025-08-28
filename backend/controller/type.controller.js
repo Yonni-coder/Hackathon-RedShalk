@@ -33,10 +33,13 @@ exports.createType = async (req, res) => {
 //Recuperer tous les types
 exports.getAllTypes = async (req, res) => {
   try {
+    const company_id = req.user.company_id;
+
     const [rows] = await db.query(
       "SELECT * FROM ressource_types where company_id=?",
-      [req.user.company_id]
+      [company_id]
     );
+
     res.status(200).json(rows);
   } catch (error) {
     console.error(error);
