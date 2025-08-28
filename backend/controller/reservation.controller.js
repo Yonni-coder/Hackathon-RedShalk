@@ -279,9 +279,9 @@ exports.createReservation = async (req, res) => {
     );
 
     // Mettre à jour le statut de la ressource
-    await db.query("UPDATE ressources SET status = 'reserve' WHERE id = ?", [
-      ressource_id,
-    ]);
+    // await db.query("UPDATE ressources SET status = 'reserve' WHERE id = ?", [
+    //   ressource_id,
+    // ]);
 
     // Récupérer la réservation créée
     const [newReservation] = await db.query(
