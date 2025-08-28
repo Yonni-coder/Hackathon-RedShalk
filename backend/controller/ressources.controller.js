@@ -11,24 +11,54 @@ exports.createRessource = async (req, res) => {
       availability,
       location,
       status,
-      company_id,
       type_id,
       tarifs,
       photos,
     } = req.body;
+    const company_id = req.user.company_id;
 
-    if (
-      !name ||
-      !description ||
-      !availability ||
-      !location ||
-      !company_id ||
-      !type_id ||
-      !capacity
-    ) {
-      return res.status(400).json({ message: "Champs obligatoires manquants" });
+    // Validation détaillée des champs obligatoires
+    const missingFields = [];
+
+    if (!name) missingFields.push("name");
+    if (!description) missingFields.push("description");
+    if (!capacity) missingFields.push("capacity");
+    if (!availability) missingFields.push("availability");
+    if (!location) missingFields.push("location");
+    if (!type_id) missingFields.push("type_id");
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        message: "Champs obligatoires manquants",
+        details: `Les champs suivants sont requis : ${missingFields.join(
+          ", "
+        )}`,
+        missingFields: missingFields,
+      });
     }
 
+    // Validation du type de capacité
+    if (isNaN(capacity) || capacity <= 0) {
+      return res.status(400).json({
+        message: "Capacité invalide",
+        details: "La capacité doit être un nombre positif",
+      });
+    }
+
+    // Validation du type_id (doit exister dans la table ressource_types)
+    const [typeExists] = await db.query(
+      "SELECT id FROM ressource_types WHERE id = ?",
+      [type_id]
+    );
+
+    if (typeExists.length === 0) {
+      return res.status(400).json({
+        message: "Type de ressource invalide",
+        details: "Le type de ressource spécifié n'existe pas",
+      });
+    }
+
+    // Insertion de la ressource
     const [result] = await db.query(
       `INSERT INTO ressources (name, description, capacity, availability, location, status, company_id, type_id)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -46,8 +76,33 @@ exports.createRessource = async (req, res) => {
 
     const ressourceId = result.insertId;
 
+    // Insertion des tarifs si présents
     if (tarifs) {
       const { tarif_h, tarif_j, tarif_sem, tarif_mois, tarif_an } = tarifs;
+
+      // Validation des tarifs (doivent être des nombres positifs)
+      const invalidTarifs = [];
+      if (tarif_h !== undefined && (isNaN(tarif_h) || tarif_h < 0))
+        invalidTarifs.push("tarif_h");
+      if (tarif_j !== undefined && (isNaN(tarif_j) || tarif_j < 0))
+        invalidTarifs.push("tarif_j");
+      if (tarif_sem !== undefined && (isNaN(tarif_sem) || tarif_sem < 0))
+        invalidTarifs.push("tarif_sem");
+      if (tarif_mois !== undefined && (isNaN(tarif_mois) || tarif_mois < 0))
+        invalidTarifs.push("tarif_mois");
+      if (tarif_an !== undefined && (isNaN(tarif_an) || tarif_an < 0))
+        invalidTarifs.push("tarif_an");
+
+      if (invalidTarifs.length > 0) {
+        return res.status(400).json({
+          message: "Tarifs invalides",
+          details: `Les tarifs suivants sont invalides : ${invalidTarifs.join(
+            ", "
+          )}. Ils doivent être des nombres positifs.`,
+          invalidTarifs: invalidTarifs,
+        });
+      }
+
       await db.query(
         `INSERT INTO tarifs (ressource_id, tarif_h, tarif_j, tarif_sem, tarif_mois, tarif_an)
          VALUES (?, ?, ?, ?, ?, ?)`,
@@ -62,8 +117,29 @@ exports.createRessource = async (req, res) => {
       );
     }
 
+    // Insertion des photos si présentes
     if (photos && Array.isArray(photos)) {
+      // Validation des URLs de photos
+      const invalidPhotos = [];
+      const validPhotos = [];
+
       for (const photo of photos) {
+        if (typeof photo !== "string" || !photo.trim()) {
+          invalidPhotos.push(photo);
+        } else {
+          validPhotos.push(photo.trim());
+        }
+      }
+
+      if (invalidPhotos.length > 0) {
+        return res.status(400).json({
+          message: "Photos invalides",
+          details: `${invalidPhotos.length} photo(s) contiennent des URLs invalides`,
+          invalidPhotos: invalidPhotos,
+        });
+      }
+
+      for (const photo of validPhotos) {
         await db.query(
           `INSERT INTO ressource_photos (ressource_id, photo_url) VALUES (?, ?)`,
           [ressourceId, photo]
@@ -71,14 +147,42 @@ exports.createRessource = async (req, res) => {
       }
     }
 
-    res
-      .status(201)
-      .json({ message: "Ressource créée avec succès", ressourceId });
+    res.status(201).json({
+      message: "Ressource créée avec succès",
+      ressourceId: ressourceId,
+      details: {
+        name: name,
+        type_id: type_id,
+        capacity: capacity,
+        tarifsAdded: !!tarifs,
+        photosAdded: photos && Array.isArray(photos) ? photos.length : 0,
+      },
+    });
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ message: "Erreur lors de la création de la ressource" });
+    console.error("Erreur détaillée:", error);
+
+    // Gestion spécifique des erreurs de base de données
+    if (error.code === "ER_NO_REFERENCED_ROW_2") {
+      return res.status(400).json({
+        message: "Erreur de référence",
+        details: "La company_id ou type_id spécifié n'existe pas",
+      });
+    }
+
+    if (error.code === "ER_DUP_ENTRY") {
+      return res.status(400).json({
+        message: "Ressource déjà existante",
+        details: "Une ressource avec ce nom existe déjà pour cette entreprise",
+      });
+    }
+
+    res.status(500).json({
+      message: "Erreur lors de la création de la ressource",
+      details:
+        process.env.NODE_ENV === "development"
+          ? error.message
+          : "Une erreur interne s'est produite",
+    });
   }
 };
 
@@ -270,12 +374,9 @@ exports.getRessourcesByCompany = async (req, res) => {
     res.json(rows);
   } catch (error) {
     console.error(error);
-    res
-      .status(500)
-      .json({
-        message:
-          "Erreur lors de la récupération des ressources de l'entreprise",
-      });
+    res.status(500).json({
+      message: "Erreur lors de la récupération des ressources de l'entreprise",
+    });
   }
 };
 
