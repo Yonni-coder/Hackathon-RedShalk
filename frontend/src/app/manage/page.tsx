@@ -34,6 +34,7 @@ import {
   HelpCircle,
   LogOut,
   Library,
+  FolderPlus,
 } from "lucide-react"
 import {
   Sidebar,
@@ -53,6 +54,7 @@ import {
 import Logo from "@/components/design/logo"
 import TypesForm from "@/components/design/manage/types-forms"
 import RessourcesForm from "@/components/design/manage/ressources-forms"
+import Ressources from "@/components/design/manage/ressources"
 
 // Données simulées pour les statistiques
 const occupancyData = [
@@ -125,8 +127,8 @@ export default function CoworkingDashboard() {
         { id: "rooms", label: "Gestion des Salles", icon: Building },
         { id: "analytics", label: "Analytiques", icon: BarChart3 },
         { id: "layout", label: "Plan des Salles", icon: MapPin },
-        { id: "members", label: "Membres", icon: Users },
         { id: "ressources", label: "Ressources", icon: Library },
+        { id: "create_ressources", label: "Créer un Type && Ressource", icon: FolderPlus },
     ]
 
     return (
@@ -596,23 +598,11 @@ export default function CoworkingDashboard() {
                         </Card>
                     )}
 
-                    {activeSection === "members" && (
-                        <Card>
-                        <CardHeader>
-                            <CardTitle>Gestion des Membres</CardTitle>
-                            <CardDescription>Liste et statistiques des membres actifs</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-center py-12">
-                            <Users className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                            <h3 className="text-lg font-medium mb-2">Section Membres</h3>
-                            <p className="text-muted-foreground">Cette section sera développée prochainement</p>
-                            </div>
-                        </CardContent>
-                        </Card>
+                    {activeSection === "ressources" && (
+                        <Ressources />
                     )}
 
-                    {activeSection === "ressources" && (
+                    {activeSection === "create_ressources" && (
                         <div className="flex items-start gap-5">
                             <RessourcesForm />
                             <TypesForm />

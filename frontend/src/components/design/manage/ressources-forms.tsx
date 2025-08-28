@@ -18,7 +18,7 @@ export default function RessourcesForm () {
     const ressourceSchema = z.object({
         name: z.string().nonempty("Ce champ est requis"),
         description: z.string().nonempty("Ce champ est requis"),
-        capacity: z.number().optional(),
+        capacity: z.number("Ce champ doit être un chiffre .").optional(),
         type_id: z.number(),
         location: z.string().nonempty("Ce champ est requis"),
         availability: z.string().nonempty("Ce champ est requis"),
@@ -130,7 +130,9 @@ export default function RessourcesForm () {
                             </Label>
                             <Input
                                 id="capacity"
-                                {...register("capacity", { valueAsNumber: true })}
+                                {...register("capacity", {
+                                    setValueAs: (v) => (v === "" || v == null ? undefined : Number(v))
+                                })}
                                 placeholder="Capacité"
                                 className="col-span-3"
                             />

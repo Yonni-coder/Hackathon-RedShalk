@@ -13,10 +13,12 @@ import { size } from "zod"
 import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/stores/useAuthStore"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
+import { usePathname } from "next/navigation"
  
 export default function Navbar () {
     const [isOpen, setIsOpen] = useState(false)
     const { user, isAuthenticated } = useAuthStore()
+    const pathname = usePathname()
     const toggleMenu = () => setIsOpen(!isOpen)
     return (
         <motion.nav
@@ -73,7 +75,7 @@ export default function Navbar () {
                             <DropdownMenuTrigger asChild>
                                 <motion.button
                                     whileHover={{ scale: 1.05 }}
-                                    className="flex items-center space-x-2 text-foreground hover:text-primary transition-colors duration-200"
+                                    className={cn("flex items-center space-x-2 text-foreground hover:text-primary transition-colors duration-200", pathname === "/ressources" && "text-primary")}
                                 >
                                     <Building2 className="h-4 w-4" />
                                     <span>Salles</span>
@@ -93,8 +95,10 @@ export default function Navbar () {
                                             <span>Réservation</span>
                                         </DropdownMenuItem>
                                         <DropdownMenuItem className="flex items-center space-x-2 hover:bg-accent hover:text-accent-foreground">
-                                            <Eye className="h-4 w-4" />
-                                            <span>Voir les salles</span>
+                                            <Link href="/ressources" className="flex items-center space-x-2">
+                                                <Eye className="h-4 w-4" />
+                                                <span>Voir les salles</span>
+                                            </Link>
                                         </DropdownMenuItem>
                                     </motion.div>
                                 </DropdownMenuContent>
