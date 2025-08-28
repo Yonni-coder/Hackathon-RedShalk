@@ -29,11 +29,11 @@ export default function Page () {
         cardName: "",
     })
 
-    useEffect(() => {
-        if (items.length === 0) {
-            router.push("/")
-        }
-    }, [items.length, router])
+    // useEffect(() => {
+    //     if (items.length === 0) {
+    //         router.push("/")
+    //     }
+    // }, [items.length, router])
 
     const handleInputChange = (field: string, value: string) => {
         setFormData((prev) => ({ ...prev, [field]: value }))
@@ -183,60 +183,46 @@ export default function Page () {
 
                             <Card>
                                 <CardHeader>
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                    <CreditCard className="h-5 w-5" />
-                                    Informations de paiement
-                                </CardTitle>
+                                    <CardTitle className="text-lg flex flex-col justify-center items-center gap-2">
+                                    {/* Icône Orange Money (SVG custom car pas dans lucide) */}
+                                    <img src="/orangemoney.png" className="w-[200px]" alt="icon ORange MOney" />
+                                    Paiement Orange Money
+                                    </CardTitle>
                                 </CardHeader>
+
                                 <CardContent className="space-y-4">
-                                <div>
-                                    <Label htmlFor="cardName">Nom sur la carte *</Label>
-                                    <Input
-                                    id="cardName"
-                                    required
-                                    value={formData.cardName}
-                                    onChange={(e) => handleInputChange("cardName", e.target.value)}
-                                    className="mt-1"
-                                    />
-                                </div>
-                                <div>
-                                    <Label htmlFor="cardNumber">Numéro de carte *</Label>
-                                    <Input
-                                    id="cardNumber"
-                                    required
-                                    placeholder="1234 5678 9012 3456"
-                                    value={formData.cardNumber}
-                                    onChange={handleCardNumberChange}
-                                    className="mt-1"
-                                    />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                    <Label htmlFor="expiryDate">Date d'expiration *</Label>
+                                    <Label htmlFor="phoneNumber">Numéro Orange Money *</Label>
                                     <Input
-                                        id="expiryDate"
+                                        id="phoneNumber"
                                         required
-                                        placeholder="MM/YY"
-                                        value={formData.expiryDate}
-                                        onChange={handleExpiryChange}
+                                        placeholder="+261 32 xx xxx xx"
+                                        value={formData.phoneNumber}
+                                        onChange={(e) =>
+                                        handleInputChange("phoneNumber", e.target.value.replace(/\D/g, ""))
+                                        }
                                         className="mt-1"
                                     />
                                     </div>
+
                                     <div>
-                                    <Label htmlFor="cvv">CVV *</Label>
+                                    <Label htmlFor="transactionId">ID Transaction *</Label>
                                     <Input
-                                        id="cvv"
+                                        id="transactionId"
                                         required
-                                        placeholder="123"
-                                        maxLength={4}
-                                        value={formData.cvv}
-                                        onChange={(e) => handleInputChange("cvv", e.target.value.replace(/\D/g, ""))}
+                                        placeholder="Ex: OM123456789"
+                                        value={formData.transactionId}
+                                        onChange={(e) => handleInputChange("transactionId", e.target.value)}
                                         className="mt-1"
                                     />
                                     </div>
-                                </div>
+
+                                    <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
+                                    Confirmer le paiement
+                                    </Button>
                                 </CardContent>
                             </Card>
+
 
                             <Button type="submit" className="w-full gap-2" size="lg" disabled={loading}>
                                 {loading ? (
