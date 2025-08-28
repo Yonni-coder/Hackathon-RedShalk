@@ -184,7 +184,7 @@ CREATE TABLE tarifs (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
--- photos des ressources
+-- photos des ressources 
 CREATE TABLE ressource_photos (
   id INT AUTO_INCREMENT PRIMARY KEY,
   ressource_id INT NOT NULL,
@@ -193,3 +193,40 @@ CREATE TABLE ressource_photos (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
+-- 1) tables panier + payments
+CREATE TABLE IF NOT EXISTS carts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS cart_items (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  cart_id INT NOT NULL,
+  ressource_id INT NOT NULL,
+  start_date DATETIME NOT NULL,
+  end_date DATETIME NOT NULL,
+  price DECIMAL(10,2) NOT NULL,
+  qty INT DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (cart_id) REFERENCES carts(id) ON DELETE CASCADE,
+  FOREIGN KEY (ressource_id) REFERENCES ressources(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS payments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  stripe_intent_id VARCHAR(255),
+  amount DECIMAL(10,2) NOT NULL,
+  currency VARCHAR(10) DEFAULT 'usd',
+  status VARCHAR(50) DEFAULT 'created', -- created, succeeded, failed
+  metadata JSON DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 2) champ pour stocker le reçu (downloadable) — optionnel mais utile
+ALTER TABLE reservations
+  ADD COLUMN IF NOT EXISTS receipt_url VARCHAR(255) DEFAULT NULL;

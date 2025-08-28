@@ -16,6 +16,70 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
+-- Table structure for table `cart_items`
+--
+
+DROP TABLE IF EXISTS `cart_items`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `cart_items` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `cart_id` int(11) NOT NULL,
+  `ressource_id` int(11) NOT NULL,
+  `start_date` datetime NOT NULL,
+  `end_date` datetime NOT NULL,
+  `price` decimal(10,2) NOT NULL,
+  `notes` text DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `cart_id` (`cart_id`),
+  KEY `ressource_id` (`ressource_id`),
+  CONSTRAINT `cart_items_ibfk_1` FOREIGN KEY (`cart_id`) REFERENCES `carts` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `cart_items_ibfk_2` FOREIGN KEY (`ressource_id`) REFERENCES `ressources` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `cart_items`
+--
+
+LOCK TABLES `cart_items` WRITE;
+/*!40000 ALTER TABLE `cart_items` DISABLE KEYS */;
+INSERT INTO `cart_items` VALUES (1,1,1,'2025-09-01 09:00:00','2025-09-01 12:00:00',15000.00,'Réunion d\'équipe','2025-08-28 16:40:06'),(2,1,1,'2025-09-01 09:00:00','2025-09-01 12:00:00',15000.00,'Réunion d\'équipe','2025-08-28 16:41:25'),(3,1,1,'2025-09-01 09:00:00','2025-09-01 12:00:00',15000.00,'Réunion d\'équipe','2025-08-28 16:42:00'),(4,1,1,'2025-09-01 09:00:00','2025-09-01 12:00:00',15000.00,'Réunion d\'équipe','2025-08-28 16:42:19');
+/*!40000 ALTER TABLE `cart_items` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `carts`
+--
+
+DROP TABLE IF EXISTS `carts`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `carts` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `status` enum('active','completed','abandoned') DEFAULT 'active',
+  `total_price` decimal(10,2) DEFAULT 0.00,
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`),
+  CONSTRAINT `carts_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `carts`
+--
+
+LOCK TABLES `carts` WRITE;
+/*!40000 ALTER TABLE `carts` DISABLE KEYS */;
+INSERT INTO `carts` VALUES (1,18,'active',60000.00,'2025-08-28 16:40:06','2025-08-28 16:42:19');
+/*!40000 ALTER TABLE `carts` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `companies`
 --
 
@@ -161,7 +225,7 @@ CREATE TABLE `ressources` (
   KEY `type_id` (`type_id`),
   CONSTRAINT `ressources_ibfk_1` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE CASCADE,
   CONSTRAINT `ressources_ibfk_2` FOREIGN KEY (`type_id`) REFERENCES `ressource_types` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -217,7 +281,7 @@ CREATE TABLE `tarifs` (
   PRIMARY KEY (`id`),
   KEY `ressource_id` (`ressource_id`),
   CONSTRAINT `tarifs_ibfk_1` FOREIGN KEY (`ressource_id`) REFERENCES `ressources` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -251,7 +315,7 @@ CREATE TABLE `users` (
   UNIQUE KEY `email` (`email`),
   KEY `company_id` (`company_id`),
   CONSTRAINT `users_ibfk_1` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -260,7 +324,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'Yonni Tinogny','exemple@test.com','$2b$10$a3odMdXllXxNIfF46EJADO59s0CRLcdhWYGVbsj5VbJckc1wq2bFm','client',NULL,1,'2025-08-27 15:32:22','+261330000000'),(4,'Yonni Tinogny','exempl2e@test.com','$2b$10$9w2B6IKWYXV3R4rKQin5R.qhuu0qh9Ichbu//HIK5UgqkR3tOlZF.','client',NULL,1,'2025-08-27 15:48:20','+261330000000'),(5,'Yonni Tinogny','exempl3e@test.com','$2b$10$QySu3XzRd6ABTvtg6tbRqutk4kyhos0jVKimC6cXDF5738XLh8Wc.','client',1,1,'2025-08-27 18:14:36','+261330000000'),(6,'Yonni Tinogny','exempl4e@test.com','$2b$10$/5XwoQIUI2SAqiZwzgZZv.qcSZaZX7HcEiIH2kS5wGa6QtNbaame.','manager',1,1,'2025-08-27 18:15:04','+261330000000'),(7,'Jean Client','client1@example.com','$2b$10$xg.qd1.6miXvzMuqIHLADOq.HBrsQPv.yMRfF7k7YVM2dbJTPpPmW','client',NULL,1,'2025-08-27 18:50:51','+261 34 123 4567'),(8,'Paul Manager','manager@vahatra.mg','$2b$10$E4S1Dro2OjnODDVz2lgUKOkdz5hIu/k9HqD/X5wSSxFslyp1wj.EO','manager',NULL,0,'2025-08-27 19:00:13','+261 33 111 2233'),(9,'Marie Employée','employe@vahatra.mg','$2b$10$wxcqqxNY3o2X9Taiw5/tWeUmmSvlClV1KQPpXyRxklod4YW4Btccu','employee',NULL,0,'2025-08-27 19:01:45','+261 32 444 5566'),(10,'Alice Client','client2@example.com','$2b$10$dHBYhfrw0rRNG5hDNshCS.sn4F/cNyDQxo2pCCvv67rK/5olQZ5Uu','client',NULL,1,'2025-08-27 19:04:30','+261 34 123 4568'),(11,'Admin','admin@gmail.com','$2b$12$KWzrjdL3pEv3sZ1iSfhYjuC.PF8TERLcvzB5LvVdqN9j2NJ6J7EPK','admin',NULL,1,'2025-08-27 19:32:36',NULL),(12,'undefined undefined','client22@example.com','$2b$10$DDmUjbIt2GGHjQ2rcNNcaOnEet2w85v./PD04J5f0meYtk8qhQrt.','client',NULL,1,'2025-08-27 20:41:29','+261 34 123 4568'),(13,'Paul Manager','manager2@vahatra.mg','$2b$10$MvIaUXEMv9EvKaYIADwEauSSiIl6NxtusFHSuuS7Nx9YoF/ygv6Wu','manager',1,1,'2025-08-27 20:45:05','+261 33 111 2233'),(14,'Paul Manager','manager3@vahatra.mg','$2b$10$CVfn9nm5wLO7jorL8T4HeeZiHKLhbUYSd9Z7NI3dyUqvizSx8X5Wq','manager',1,1,'2025-08-27 21:01:23','+261 33 111 2233'),(15,'Paul Manager','client@vahatra.mg','$2b$10$gwb7t59rUG4jgqGWaXjZt.9TS5vQZkbbrFydu3I2479KbRQ8DxWpu','client',NULL,1,'2025-08-27 21:02:38','+261 33 111 2233'),(16,'Admin','admin@test.mg','$2b$10$YQg6XbF1Xf1NHCjebknnWO455oVyGsn62oAMqbYAsj3Wznq592oeK','admin',1,1,'2025-08-27 21:52:27','+261 33 111 2233'),(17,'TEssss','test@gmail.com','$2b$10$FJUOg8VrTLBFANCu.ksY6OJ6p/BRA.EaYFDfLBuZVq4ooC0LvXwU2','manager',1,1,'2025-08-27 23:48:30','+261 33 111 2233'),(18,'TEssss','tes0t@gmail.com','$2b$10$USbRQgtoSdVLwHb64wbcn.oEN6AGr2xybmhsEpvdtCo0ncSfK/RpS','client',NULL,1,'2025-08-28 06:20:47','+261 33 111 2233');
+INSERT INTO `users` VALUES (1,'Yonni Tinogny','exemple@test.com','$2b$10$a3odMdXllXxNIfF46EJADO59s0CRLcdhWYGVbsj5VbJckc1wq2bFm','client',NULL,1,'2025-08-27 15:32:22','+261330000000'),(4,'Yonni Tinogny','exempl2e@test.com','$2b$10$9w2B6IKWYXV3R4rKQin5R.qhuu0qh9Ichbu//HIK5UgqkR3tOlZF.','client',NULL,1,'2025-08-27 15:48:20','+261330000000'),(5,'Yonni Tinogny','exempl3e@test.com','$2b$10$QySu3XzRd6ABTvtg6tbRqutk4kyhos0jVKimC6cXDF5738XLh8Wc.','client',1,1,'2025-08-27 18:14:36','+261330000000'),(6,'Yonni Tinogny','exempl4e@test.com','$2b$10$/5XwoQIUI2SAqiZwzgZZv.qcSZaZX7HcEiIH2kS5wGa6QtNbaame.','manager',1,1,'2025-08-27 18:15:04','+261330000000'),(7,'Jean Client','client1@example.com','$2b$10$xg.qd1.6miXvzMuqIHLADOq.HBrsQPv.yMRfF7k7YVM2dbJTPpPmW','client',NULL,1,'2025-08-27 18:50:51','+261 34 123 4567'),(8,'Paul Manager','manager@vahatra.mg','$2b$10$E4S1Dro2OjnODDVz2lgUKOkdz5hIu/k9HqD/X5wSSxFslyp1wj.EO','manager',NULL,0,'2025-08-27 19:00:13','+261 33 111 2233'),(9,'Marie Employée','employe@vahatra.mg','$2b$10$wxcqqxNY3o2X9Taiw5/tWeUmmSvlClV1KQPpXyRxklod4YW4Btccu','employee',NULL,0,'2025-08-27 19:01:45','+261 32 444 5566'),(10,'Alice Client','client2@example.com','$2b$10$dHBYhfrw0rRNG5hDNshCS.sn4F/cNyDQxo2pCCvv67rK/5olQZ5Uu','client',NULL,1,'2025-08-27 19:04:30','+261 34 123 4568'),(11,'Admin','admin@gmail.com','$2b$12$KWzrjdL3pEv3sZ1iSfhYjuC.PF8TERLcvzB5LvVdqN9j2NJ6J7EPK','admin',NULL,1,'2025-08-27 19:32:36',NULL),(12,'undefined undefined','client22@example.com','$2b$10$DDmUjbIt2GGHjQ2rcNNcaOnEet2w85v./PD04J5f0meYtk8qhQrt.','client',NULL,1,'2025-08-27 20:41:29','+261 34 123 4568'),(13,'Paul Manager','manager2@vahatra.mg','$2b$10$MvIaUXEMv9EvKaYIADwEauSSiIl6NxtusFHSuuS7Nx9YoF/ygv6Wu','manager',1,1,'2025-08-27 20:45:05','+261 33 111 2233'),(14,'Paul Manager','manager3@vahatra.mg','$2b$10$CVfn9nm5wLO7jorL8T4HeeZiHKLhbUYSd9Z7NI3dyUqvizSx8X5Wq','manager',1,1,'2025-08-27 21:01:23','+261 33 111 2233'),(15,'Paul Manager','client@vahatra.mg','$2b$10$gwb7t59rUG4jgqGWaXjZt.9TS5vQZkbbrFydu3I2479KbRQ8DxWpu','client',NULL,1,'2025-08-27 21:02:38','+261 33 111 2233'),(16,'Admin','admin@test.mg','$2b$10$YQg6XbF1Xf1NHCjebknnWO455oVyGsn62oAMqbYAsj3Wznq592oeK','admin',1,1,'2025-08-27 21:52:27','+261 33 111 2233'),(17,'TEssss','test@gmail.com','$2b$10$FJUOg8VrTLBFANCu.ksY6OJ6p/BRA.EaYFDfLBuZVq4ooC0LvXwU2','manager',1,1,'2025-08-27 23:48:30','+261 33 111 2233'),(18,'TEssss','tes0t@gmail.com','$2b$10$USbRQgtoSdVLwHb64wbcn.oEN6AGr2xybmhsEpvdtCo0ncSfK/RpS','client',NULL,1,'2025-08-28 06:20:47','+261 33 111 2233'),(19,'TEssss','testtt@gmail.com','$2b$10$9tz/ukjfMKcbKx6VWA5iQud6lVlt1zZeH.6uwLD0zV.G.BMsP25PS','manager',2,1,'2025-08-28 18:36:20','+261 33 111 2233'),(20,'TEssss','testttt@gmail.com','$2b$10$DVhigV1FF01qcpK1uKMqMuMDXkW1BPvyIy4F9aoXFMeHcvzGtWAeq','manager',1,1,'2025-08-28 18:43:27','+261 33 111 2233');
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -273,4 +337,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-08-28  9:55:48
+-- Dump completed on 2025-08-28 21:51:59
