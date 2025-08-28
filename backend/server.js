@@ -26,13 +26,13 @@ app.use(
 
 // === routes webhook (raw body) ===
 // On importe le controller afin d'utiliser son handler de webhook
-const paiementController = require("./controller/paiement.controller");
-// Route webhook Stripe — utilise bodyParser.raw pour ne pas altérer le body
-app.post(
-  "/api/paiement/webhook",
-  bodyParser.raw({ type: "application/json" }),
-  paiementController.stripeWebhook
-);
+// const paiementController = require("./controller/paiement.controller");
+// // Route webhook Stripe — utilise bodyParser.raw pour ne pas altérer le body
+// app.post(
+//   "/api/paiement/webhook",
+//   bodyParser.raw({ type: "application/json" }),
+//   paiementController.stripeWebhook
+// );
 
 // Après avoir monté le webhook, on active le JSON parser global pour le reste de l'API
 app.use(bodyParser.json());
@@ -48,8 +48,8 @@ const validationRoutes = require("./routes/validation.routes");
 const companyRoutes = require("./routes/companies.routes");
 
 // nouvelles routes panier / paiement
-const panierRoutes = require("./routes/panier.routes");
-const paiementRoutes = require("./routes/paiement.routes");
+// const panierRoutes = require("./routes/panier.routes");
+// const paiementRoutes = require("./routes/paiement.routes");
 
 // Utilisation des routes
 app.use("/api/auth", authRoutes);
@@ -65,10 +65,11 @@ app.use("/api/ressources", require("./routes/ressources.routes"));
 
 // types d'offre
 app.use("/api/types", require("./routes/type.routes"));
+app.use("/api/cart", require("./routes/cart.routes"));
 
 // nouvelles routes
-app.use("/api/panier", panierRoutes);
-app.use("/api/paiement", paiementRoutes);
+// app.use("/api/panier", panierRoutes);
+// app.use("/api/paiement", paiementRoutes);
 
 // Gestion des erreurs JSON mal formatées
 app.use((error, req, res, next) => {
