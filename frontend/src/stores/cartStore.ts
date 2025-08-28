@@ -25,6 +25,7 @@ interface CartState {
     toggleCart: () => void
     openCart: () => void
     closeCart: () => void
+    setItems: (items: CartItem[]) => void
 }
 
 export const useCartStore = create<CartState>((set, get) => ({
@@ -55,4 +56,11 @@ export const useCartStore = create<CartState>((set, get) => ({
   openCart: () => set({ isOpen: true }),
 
   closeCart: () => set({ isOpen: false }),
+
+  setItems: (items) => {
+    set({
+      items,
+      total: items.reduce((sum, i) => sum + i.price * i.duration, 0),
+    })
+  },
 }))

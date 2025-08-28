@@ -13,9 +13,154 @@ import { Separator } from "@/components/ui/separator"
 import { useRouter } from "next/navigation"
 import { useCartStore } from "@/stores/cartStore"
 import { PaymentSkeleton } from "@/components/payment-skeleton"
+import { jsPDF } from "jspdf"
+
+// helper pour formater montant en chaîne lisible
+const formatMoney = (value: number | string) =>
+  typeof value === "number" ? value.toLocaleString("fr-FR") : parseFloat(value).toLocaleString("fr-FR")
+
+// Génère et télécharge le PDF
+const generateReceiptPdf = (booking: {
+  bookingId: string
+  customer: { email?: string; firstName?: string; lastName?: string; company?: string; phone?: string }
+  items: {
+    id: string
+    roomName: string
+    date: string
+    startTime: string
+    endTime: string
+    duration: number
+    price: number
+  }[]
+  total: number
+  paymentMethod: string
+  transactionId?: string
+  paymentDate: string
+}) => {
+  const doc = new jsPDF({ unit: "pt", format: "a4" })
+  const pageWidth = doc.internal.pageSize.getWidth()
+  let y = 40
+
+  // Header
+  doc.setFontSize(18)
+  doc.text("REÇU DE PAIEMENT", pageWidth / 2, y, { align: "center" })
+  y += 28
+
+  // Booking meta
+  doc.setFontSize(10)
+  doc.text(`Référence : ${booking.bookingId}`, 40, y)
+  doc.text(`Date : ${new Date(booking.paymentDate).toLocaleString("fr-FR")}`, pageWidth - 200, y)
+  y += 18
+
+  // Client
+  doc.setFontSize(11)
+  doc.text("Client :", 40, y)
+  const clientLine = `${booking.customer.firstName || ""} ${booking.customer.lastName || ""}`.trim()
+  doc.text(clientLine || booking.customer.email || "-", 110, y)
+  y += 16
+  if (booking.customer.company) {
+    doc.text(`Entreprise: ${booking.customer.company}`, 110, y)
+    y += 16
+  }
+  if (booking.customer.phone) {
+    doc.text(`Téléphone: ${booking.customer.phone}`, 110, y)
+    y += 16
+  }
+  y += 8
+
+  // Table header
+  doc.setDrawColor(200)
+  doc.setLineWidth(0.5)
+  const tableX = 40
+  const colWidths = { item: 180, date: 80, time: 120, duration: 60, price: 80, total: 80 }
+  doc.setFontSize(10)
+  doc.text("Produit / Salle", tableX, y)
+  doc.text("Date", tableX + colWidths.item, y)
+  doc.text("Horaire", tableX + colWidths.item + colWidths.date, y)
+  doc.text("Durée", tableX + colWidths.item + colWidths.date + colWidths.time, y)
+  doc.text("Prix/h", tableX + colWidths.item + colWidths.date + colWidths.time + colWidths.duration, y, { align: "right" })
+  doc.text("Total", pageWidth - 40, y, { align: "right" })
+  y += 8
+  doc.line(tableX, y, pageWidth - 40, y)
+  y += 12
+
+  // Items
+  booking.items.forEach((it) => {
+    const totalLine = it.price * it.duration
+    doc.setFontSize(10)
+    doc.text(it.roomName, tableX, y, { maxWidth: colWidths.item })
+    doc.text(new Date(it.date).toLocaleDateString("fr-FR"), tableX + colWidths.item, y)
+    doc.text(`${it.startTime} - ${it.endTime}`, tableX + colWidths.item + colWidths.date, y)
+    doc.text(`${it.duration}h`, tableX + colWidths.item + colWidths.date + colWidths.time, y)
+    doc.text(formatMoney(it.price), tableX + colWidths.item + colWidths.date + colWidths.time + colWidths.duration + 10, y, { align: "right" })
+    doc.text(formatMoney(totalLine), pageWidth - 40, y, { align: "right" })
+    y += 16
+
+    // si la page est presque pleine, nouvelle page
+    if (y > doc.internal.pageSize.getHeight() - 120) {
+      doc.addPage()
+      y = 40
+    }
+  })
+
+  y += 12
+  doc.line(tableX, y, pageWidth - 40, y)
+  y += 18
+
+  // Totaux
+  const tva = Math.round(booking.total * 0.2)
+  const totalTTC = Math.round(booking.total * 1.2)
+  doc.setFontSize(11)
+  doc.text("Sous-total", pageWidth - 200, y)
+  doc.text(formatMoney(booking.total.toFixed ? booking.total.toFixed(0) : String(booking.total)), pageWidth - 40, y, { align: "right" })
+  y += 16
+  doc.text("TVA (20%)", pageWidth - 200, y)
+  doc.text(formatMoney(String(tva)), pageWidth - 40, y, { align: "right" })
+  y += 16
+  doc.setFontSize(13)
+  doc.text("Total TTC", pageWidth - 200, y)
+  doc.text(formatMoney(String(totalTTC)), pageWidth - 40, y, { align: "right" })
+  y += 28
+
+  // Paiement info
+  doc.setFontSize(10)
+  doc.text(`Moyen de paiement : ${booking.paymentMethod}`, 40, y)
+  if (booking.transactionId) {
+    doc.text(`ID Transaction : ${booking.transactionId}`, 40, y + 16)
+    y += 16
+  }
+
+  // Pied de page / signature
+  doc.setFontSize(10)
+  doc.text("Merci pour votre paiement.", 40, doc.internal.pageSize.getHeight() - 60)
+  doc.text("Ce reçu fait foi de la transaction.", pageWidth - 200, doc.internal.pageSize.getHeight() - 60, { align: "right" })
+
+  // Téléchargement
+  doc.save(`${booking.bookingId}_recu.pdf`)
+}
+
+function adaptApiItems(apiItems: any[]): any[] {
+  return apiItems.map((it) => {
+    const start = new Date(it.start_date)
+    const end = new Date(it.end_date)
+    const duration = Math.abs((end.getTime() - start.getTime()) / (1000 * 60 * 60))
+
+    return {
+      id: String(it.id),
+      roomId: String(it.ressource_id),
+      roomName: `Salle #${it.ressource_id}`, // à remplacer si tu récupères le vrai nom
+      price: parseFloat(it.price),
+      date: start.toISOString().split("T")[0],
+      startTime: start.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+      endTime: end.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+      duration,
+      location: "2ème étage - Bâtiment B", // idem : remplacer par vrai champ si API
+    }
+  })
+}
 
 export default function Page () {
-    const { items, total, isOpen, addItem, removeItem, clearCart, toggleCart, openCart, closeCart } = useCartStore()
+    const { items, total, isOpen, addItem, removeItem, clearCart, toggleCart, openCart, closeCart, setItems } = useCartStore()
     const router = useRouter()
     const [loading, setLoading] = useState(false)
     const [formData, setFormData] = useState({
@@ -28,6 +173,30 @@ export default function Page () {
         cvv: "",
         cardName: "",
     })
+
+    useEffect(() => {
+        const loadAchat = async () => {
+            try {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/achat`, {
+                    method: "GET",
+                    credentials: "include"
+                })
+                const data = await response.json()
+                const adaptedItems = adaptApiItems(data.items)
+                setItems(adaptedItems)
+                const [firstName, ...rest] = data.user.fullname.split(" ")
+                setFormData((prev) => ({
+                ...prev,
+                email: data.user.email,
+                firstName: firstName || "",
+                lastName: rest.join(" ") || "",
+                }))
+            } catch (err) {
+                console.error(err)
+            }
+        }
+        loadAchat()
+  }, [addItem])
 
     // useEffect(() => {
     //     if (items.length === 0) {
@@ -82,37 +251,62 @@ export default function Page () {
         e.preventDefault()
         setLoading(true)
 
+        if (!formData.phoneNumber || !formData.transactionId) {
+            alert("Veuillez renseigner le numéro OM et l'ID Transaction.")
+            return
+            }
+
         // Simulate payment processing
         await new Promise((resolve) => setTimeout(resolve, 3000))
-
-        // Simulate successful payment
         const bookingId = `BK-${Date.now()}`
+        const bookingData = {
+        bookingId,
+        customer: {
+            email: formData.email,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            company: formData.company,
+            phone: formData.phoneNumber,
+        },
+        items: items.map((it) => ({
+            id: it.id,
+            roomName: it.roomName,
+            date: it.date,
+            startTime: it.startTime,
+            endTime: it.endTime,
+            duration: it.duration,
+            price: it.price,
+        })),
+        total,
+        paymentMethod: "Orange Money",
+        transactionId: formData.transactionId,
+        paymentDate: new Date().toISOString(),
+        }
 
-        // Store booking data for confirmation page
-        localStorage.setItem(
-            "lastBooking",
-            JSON.stringify({
-            id: bookingId,
-            items: items,
-            total: total,
-            customerInfo: {
-                email: formData.email,
-                firstName: formData.firstName,
-                lastName: formData.lastName,
-                company: formData.company,
-            },
-            paymentDate: new Date().toISOString(),
-            }),
-        )
+        // générer pdf et le télécharger
+        try {
+        generateReceiptPdf(bookingData)
+        // optionnel: stocker la réservation côté client/serveur ici
+        // localStorage.setItem("lastBooking", JSON.stringify(bookingData))
+        // clearCart() si tu veux vider le panier après le téléchargement
+        } catch (err) {
+        console.error(err)
+        alert("Échec génération du reçu.")
+        } finally {
+        setLoading(false)
+        }
+
+        // Simulate successful paymen
 
         clearCart()
-        router.push(`/confirmation/${bookingId}`)
 
         if (items.length === 0) {
             return null
         }
     
     }
+
+    console.log(items)
 
     return (
         <div className="min-h-screen bg-background">
@@ -216,10 +410,6 @@ export default function Page () {
                                         className="mt-1"
                                     />
                                     </div>
-
-                                    <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white">
-                                    Confirmer le paiement
-                                    </Button>
                                 </CardContent>
                             </Card>
 
@@ -243,18 +433,13 @@ export default function Page () {
                                 <CardTitle className="text-lg">Résumé de la commande</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                {items.map((item) => (
+                                {items.map((item, index) => (
                                 <motion.div
-                                    key={item.id}
+                                    key={index}
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     className="flex gap-3 p-3 bg-muted rounded-lg"
                                 >
-                                    <img
-                                        src={item.image || "/placeholder.svg"}
-                                        alt={item.roomName}
-                                        className="w-16 h-16 rounded-lg object-cover"
-                                    />
                                     <div className="flex-1 min-w-0">
                                         <h4 className="font-semibold truncate">{item.roomName}</h4>
                                         <div className="space-y-1 text-sm text-muted-foreground">
@@ -274,7 +459,7 @@ export default function Page () {
                                             </div>
                                         </div>
                                         <div className="text-right mt-2">
-                                            <div className="font-bold text-primary">{item.price * item.duration}€</div>
+                                            <div className="font-bold text-primary">{item.price * item.duration}Ar</div>
                                         </div>
                                     </div>
                                 </motion.div>
@@ -285,16 +470,16 @@ export default function Page () {
                                 <div className="space-y-2">
                                 <div className="flex justify-between">
                                     <span>Sous-total</span>
-                                    <span>{total}€</span>
+                                    <span>{total}Ar</span>
                                 </div>
                                 <div className="flex justify-between text-sm text-muted-foreground">
                                     <span>TVA (20%)</span>
-                                    <span>{Math.round(total * 0.2)}€</span>
+                                    <span>{Math.round(total * 0.2)}Ar</span>
                                 </div>
                                 <Separator />
                                 <div className="flex justify-between text-lg font-bold">
                                     <span>Total TTC</span>
-                                    <span className="text-primary">{Math.round(total * 1.2)}€</span>
+                                    <span className="text-primary">{Math.round(total * 1.2)}Ar</span>
                                 </div>
                                 </div>
                             </CardContent>

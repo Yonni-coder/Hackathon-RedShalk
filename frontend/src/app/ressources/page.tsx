@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 import { useInfiniteRooms } from "@/hooks/useInfiniteRooms";
+import { useCartStore } from "@/stores/cartStore";
 import useRoomsStore from "@/stores/roomsStore";
 import { ReservationData, Room } from "@/types/room";
 import { motion } from "framer-motion";
@@ -32,6 +33,7 @@ export default function Page() {
   const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('all');
   const [reserveLoading, setReserveLoading] = useState(false)
   const { setRooms } = useRoomsStore()
+  const { addItem } = useCartStore()
   
   const sampleRooms = useRoomsStore((s) => s.rooms)
 
@@ -97,17 +99,10 @@ export default function Page() {
         if (response.ok) {
             toast.success("Reservation transmit")
             handleCloseReservationDialog()
-            const newRooms = sampleRooms.map(room => {
-      if (room.id === reservationData.ressource_id) {
-        return {
-          ...room,
-          // adapte selon ta structure : ex. marquer indisponible, ajouter reservation, etc.
-          status: "reserve"
-        };
-      }
-      return room;
-    });
-    setRooms(newRooms)
+            addItem(result.reservation)
+        }
+        if (!response.ok) {
+          toast.error(result.details)
         }
     } catch (err) {
         console.error(err)

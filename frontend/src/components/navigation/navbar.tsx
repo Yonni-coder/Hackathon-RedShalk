@@ -15,10 +15,12 @@ import { useAuthStore } from "@/stores/useAuthStore"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 import { usePathname } from "next/navigation"
 import useRoomsStore from "@/stores/roomsStore"
+import { useCartStore } from "@/stores/cartStore"
  
 export default function Navbar () {
     const [isOpen, setIsOpen] = useState(false)
     const { user, isAuthenticated } = useAuthStore()
+    const { items } = useCartStore()
     const pathname = usePathname()
     const toggleMenu = () => setIsOpen(!isOpen)
     
@@ -126,21 +128,28 @@ export default function Navbar () {
                             </Button>
                         </div>
                     </div>
-                    <motion.div 
-                        whileHover={{ scale: 1.05 }} 
-                        whileTap={{ scale: 0.95 }}
-                    >
-                        <Link 
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="relative">
+                        <Link
                             href="/checkout"
                             className={cn(
-                                buttonVariants({
-                                variant: "outline",
-                                size: "icon"
-                            }), "rounded-xl px-4 py-2 transition-colors duration-300")}
+                            buttonVariants({ variant: "outline", size: "icon" }),
+                            "rounded-xl px-4 py-2 transition-colors duration-300"
+                            )}
                         >
                             <ShoppingCart />
+
+                            {/* 🟢 Badge */}
+                            {items.length > 0 && (
+                            <motion.span
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5"
+                            >
+                                {items.length}
+                            </motion.span>
+                            )}
                         </Link>
-                    </motion.div>
+                        </motion.div>
                     {isAuthenticated && user ? (
                         <>
                             <Avatar className="w-10 h-10 cursor-pointer">
