@@ -301,6 +301,28 @@ exports.getAllRessources = async (req, res) => {
        JOIN ressource_types t ON r.type_id=t.id 
        JOIN companies c ON r.company_id=c.id`
     );
+
+    // Pour chaque ressource, récupérer les tarifs et les photos
+    for (let i = 0; i < rows.length; i++) {
+      const ressource = rows[i];
+
+      // Récupérer les tarifs
+      const [tarifs] = await db.query(
+        `SELECT * FROM tarifs WHERE ressource_id = ?`,
+        [ressource.id]
+      );
+
+      // Récupérer les photos
+      const [photos] = await db.query(
+        `SELECT * FROM ressource_photos WHERE ressource_id = ?`,
+        [ressource.id]
+      );
+
+      // Ajouter les tarifs et photos à l'objet ressource
+      ressource.tarifs = tarifs.length > 0 ? tarifs[0] : null;
+      ressource.photos = photos;
+    }
+
     res.json(rows);
   } catch (error) {
     console.error(error);
