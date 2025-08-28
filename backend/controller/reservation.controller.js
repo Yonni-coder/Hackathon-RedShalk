@@ -1,5 +1,13 @@
 const db = require("../db/connectDB");
 
+// Helper : accepte ISO (ex: "2025-09-01T10:00:00Z") ou "YYYY-MM-DD HH:MM:SS" et renvoie "YYYY-MM-DD HH:MM:SS" ou null
+const formatForMySQL = (isoDate) => {
+  if (!isoDate) return null;
+  const d = new Date(isoDate);
+  if (isNaN(d.getTime())) return null;
+  return d.toISOString().slice(0, 19).replace("T", " ");
+};
+
 // Obtenir toutes les réservations avec filtrage selon le rôle
 exports.getAllReservations = async (req, res) => {
   try {
@@ -107,6 +115,13 @@ const checkReservationConflict = async (
   endDate,
   excludeId = null
 ) => {
+  // accepte ISO ou MySQL strings — on formate à l'intérieur pour être sûr
+  const formattedStart = formatForMySQL(startDate);
+  const formattedEnd = formatForMySQL(endDate);
+  if (!formattedStart || !formattedEnd) {
+    throw new Error("Dates invalides passées à checkReservationConflict");
+  }
+
   let query = `
     SELECT * FROM reservations 
     WHERE ressource_id = ? 
@@ -120,12 +135,12 @@ const checkReservationConflict = async (
 
   let params = [
     ressourceId,
-    startDate,
-    endDate,
-    startDate,
-    endDate,
-    startDate,
-    endDate,
+    formattedStart,
+    formattedEnd,
+    formattedStart,
+    formattedEnd,
+    formattedStart,
+    formattedEnd,
   ];
 
   if (excludeId) {
@@ -137,65 +152,10 @@ const checkReservationConflict = async (
   return rows.length > 0;
 };
 
-// Calculer le prix en fonction de la durée et du tarif
-const calculatePrice = (startDate, endDate, tarifs) => {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const durationMs = end - start;
-
-  // Convertir la durée en différentes unités
-  const hours = durationMs / (1000 * 60 * 60);
-  const days = hours / 24;
-  const weeks = days / 7;
-  const months = days / 30; // Approximation
-  const years = days / 365; // Approximation
-
-  // Trouver le meilleur tarif en fonction de la durée
-  let bestPrice = null;
-
-  if (tarifs.tarif_h && hours < 24) {
-    bestPrice = hours * tarifs.tarif_h;
-  }
-
-  if (
-    tarifs.tarif_j &&
-    days >= 1 &&
-    (!bestPrice || days * tarifs.tarif_j < bestPrice)
-  ) {
-    bestPrice = days * tarifs.tarif_j;
-  }
-
-  if (
-    tarifs.tarif_sem &&
-    weeks >= 1 &&
-    (!bestPrice || weeks * tarifs.tarif_sem < bestPrice)
-  ) {
-    bestPrice = weeks * tarifs.tarif_sem;
-  }
-
-  if (
-    tarifs.tarif_mois &&
-    months >= 1 &&
-    (!bestPrice || months * tarifs.tarif_mois < bestPrice)
-  ) {
-    bestPrice = months * tarifs.tarif_mois;
-  }
-
-  if (
-    tarifs.tarif_an &&
-    years >= 1 &&
-    (!bestPrice || years * tarifs.tarif_an < bestPrice)
-  ) {
-    bestPrice = years * tarifs.tarif_an;
-  }
-
-  return bestPrice || 0;
-};
-
 // Créer une nouvelle réservation
 exports.createReservation = async (req, res) => {
   try {
-    const { ressource_id, start_date, end_date, notes } = req.body;
+    const { ressource_id, start_date, end_date, notes, price } = req.body;
     const user_id = req.user.id;
 
     // Validation des champs requis
@@ -203,6 +163,7 @@ exports.createReservation = async (req, res) => {
     if (!ressource_id) missingFields.push("ressource_id");
     if (!start_date) missingFields.push("start_date");
     if (!end_date) missingFields.push("end_date");
+    if (price === undefined || price === null) missingFields.push("price"); // Prix maintenant requis
 
     if (missingFields.length > 0) {
       return res.status(400).json({
@@ -214,18 +175,26 @@ exports.createReservation = async (req, res) => {
       });
     }
 
-    // Vérifier que les dates sont valides
-    const startDate = new Date(start_date);
-    const endDate = new Date(end_date);
+    // Vérifier que le prix est valide
+    if (isNaN(price) || price < 0) {
+      return res.status(400).json({
+        message: "Prix invalide",
+        details: "Le prix doit être un nombre positif",
+      });
+    }
 
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    // Vérifier que les dates sont valides (JS Date)
+    const startDateObj = new Date(start_date);
+    const endDateObj = new Date(end_date);
+
+    if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
       return res.status(400).json({
         message: "Dates invalides",
         details: "Les dates de début et de fin doivent être au format valide",
       });
     }
 
-    if (startDate >= endDate) {
+    if (startDateObj >= endDateObj) {
       return res.status(400).json({
         message: "Dates incohérentes",
         details: "La date de début doit être avant la date de fin",
@@ -234,11 +203,10 @@ exports.createReservation = async (req, res) => {
 
     // Vérifier que la ressource existe
     const [ressourceRows] = await db.query(
-      `SELECT r.*, comp.id as company_id, t.tarif_h, t.tarif_j, t.tarif_sem, t.tarif_mois, t.tarif_an 
-       FROM ressources r 
-       JOIN companies comp ON r.company_id = comp.id
-       LEFT JOIN tarifs t ON r.id = t.ressource_id 
-       WHERE r.id = ?`,
+      `SELECT r.*, comp.id as company_id
+         FROM ressources r 
+         JOIN companies comp ON r.company_id = comp.id
+         WHERE r.id = ?`,
       [ressource_id]
     );
 
@@ -246,13 +214,22 @@ exports.createReservation = async (req, res) => {
       return res.status(404).json({ message: "Ressource non trouvée" });
     }
 
-    const ressource = ressourceRows[0];
+    // Formater pour MySQL (YYYY-MM-DD HH:MM:SS)
+    const formattedStart = formatForMySQL(start_date);
+    const formattedEnd = formatForMySQL(end_date);
 
-    // Vérifier les conflits de réservation
+    if (!formattedStart || !formattedEnd) {
+      return res.status(400).json({
+        message: "Dates invalides",
+        details: "Les dates de début et de fin doivent être au format valide",
+      });
+    }
+
+    // Vérifier les conflits de réservation (avec valeurs formatées)
     const hasConflict = await checkReservationConflict(
       ressource_id,
-      start_date,
-      end_date
+      formattedStart,
+      formattedEnd
     );
     if (hasConflict) {
       return res.status(409).json({
@@ -261,13 +238,17 @@ exports.createReservation = async (req, res) => {
       });
     }
 
-    // Calculer le prix
-    const price = calculatePrice(start_date, end_date, ressource);
-
-    // Créer la réservation avec statut "pending" (en attente)
+    // Créer la réservation avec le prix fourni par le frontend (utiliser dates formatées)
     const [result] = await db.query(
       "INSERT INTO reservations (ressource_id, user_id, start_date, end_date, notes, status, price) VALUES (?, ?, ?, ?, ?, 'pending', ?)",
-      [ressource_id, user_id, start_date, end_date, notes || null, price]
+      [
+        ressource_id,
+        user_id,
+        formattedStart,
+        formattedEnd,
+        notes || null,
+        price,
+      ]
     );
 
     // Mettre à jour le statut de la ressource
@@ -278,12 +259,12 @@ exports.createReservation = async (req, res) => {
     // Récupérer la réservation créée
     const [newReservation] = await db.query(
       `
-      SELECT r.*, u.fullname as user_name, res.name as ressource_name
-      FROM reservations r
-      JOIN users u ON r.user_id = u.id
-      JOIN ressources res ON r.ressource_id = res.id
-      WHERE r.id = ?
-    `,
+        SELECT r.*, u.fullname as user_name, res.name as ressource_name
+        FROM reservations r
+        JOIN users u ON r.user_id = u.id
+        JOIN ressources res ON r.ressource_id = res.id
+        WHERE r.id = ?
+      `,
       [result.insertId]
     );
 
@@ -294,38 +275,32 @@ exports.createReservation = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+    // Si checkReservationConflict a lancé une erreur pour dates invalides, renvoyer 400
+    if (
+      String(error).includes("Dates invalides") ||
+      String(error).includes("Invalid dates")
+    ) {
+      return res.status(400).json({
+        message: "Dates invalides",
+        details: error.message,
+      });
+    }
     res
       .status(500)
       .json({ message: "Erreur lors de la création de la réservation" });
   }
 };
 
-// Mettre à jour le statut d'une réservation (validation par le manager)
-exports.updateReservationStatus = async (req, res) => {
+// Mettre à jour une réservation
+exports.updateReservation = async (req, res) => {
   try {
     const reservationId = req.params.id;
-    const { status } = req.body;
-    const userRole = req.user.role;
-    const userCompanyId = req.user.company_id;
-
-    // Vérifier que le statut est valide
-    const validStatuses = ["pending", "confirmed", "cancelled", "completed"];
-    if (!status || !validStatuses.includes(status)) {
-      return res.status(400).json({
-        message: "Statut invalide",
-        details: `Le statut doit être l'une des valeurs suivantes : ${validStatuses.join(
-          ", "
-        )}`,
-        validStatuses: validStatuses,
-      });
-    }
+    const { ressource_id, start_date, end_date, status, notes, price } =
+      req.body;
 
     // Vérifier que la réservation existe
     const [reservationRows] = await db.query(
-      `SELECT r.*, res.company_id 
-       FROM reservations r
-       JOIN ressources res ON r.ressource_id = res.id
-       WHERE r.id = ?`,
+      "SELECT * FROM reservations WHERE id = ?",
       [reservationId]
     );
 
@@ -335,52 +310,113 @@ exports.updateReservationStatus = async (req, res) => {
 
     const reservation = reservationRows[0];
 
-    // Vérifier les permissions
-    if (userRole === "client" && reservation.user_id !== req.user.id) {
-      return res.status(403).json({
-        message: "Permission refusée",
-        details: "Vous ne pouvez modifier que vos propres réservations",
+    // Vérifier les conflits de réservation (en excluant la réservation actuelle)
+    if (ressource_id && start_date && end_date) {
+      const formattedStartForCheck = formatForMySQL(start_date);
+      const formattedEndForCheck = formatForMySQL(end_date);
+      if (!formattedStartForCheck || !formattedEndForCheck) {
+        return res.status(400).json({
+          message: "Dates invalides",
+          details: "Les dates de début et de fin doivent être au format valide",
+        });
+      }
+
+      const hasConflict = await checkReservationConflict(
+        ressource_id,
+        formattedStartForCheck,
+        formattedEndForCheck,
+        reservationId
+      );
+      if (hasConflict) {
+        return res.status(409).json({
+          message: "La ressource est déjà réservée pour cette période",
+        });
+      }
+    }
+
+    // Si le prix est fourni, vérifier qu'il est valide
+    if (price !== undefined && (isNaN(price) || price < 0)) {
+      return res.status(400).json({
+        message: "Prix invalide",
+        details: "Le prix doit être un nombre positif",
       });
     }
 
-    if (
-      (userRole === "manager" || userRole === "employee") &&
-      reservation.company_id !== userCompanyId
-    ) {
-      return res.status(403).json({
-        message: "Permission refusée",
-        details:
-          "Vous ne pouvez modifier que les réservations de votre entreprise",
-      });
+    // Construire la requête de mise à jour dynamiquement (formater les dates si présentes)
+    let updateFields = [];
+    let updateValues = [];
+
+    if (ressource_id) {
+      updateFields.push("ressource_id = ?");
+      updateValues.push(ressource_id);
     }
 
-    // Mettre à jour le statut
-    await db.query(
-      "UPDATE reservations SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-      [status, reservationId]
+    if (start_date) {
+      const formatted = formatForMySQL(start_date);
+      if (!formatted) {
+        return res.status(400).json({ message: "start_date invalide" });
+      }
+      updateFields.push("start_date = ?");
+      updateValues.push(formatted);
+    }
+
+    if (end_date) {
+      const formatted = formatForMySQL(end_date);
+      if (!formatted) {
+        return res.status(400).json({ message: "end_date invalide" });
+      }
+      updateFields.push("end_date = ?");
+      updateValues.push(formatted);
+    }
+
+    if (status) {
+      updateFields.push("status = ?");
+      updateValues.push(status);
+    }
+
+    if (notes !== undefined) {
+      updateFields.push("notes = ?");
+      updateValues.push(notes);
+    }
+
+    if (price !== undefined) {
+      updateFields.push("price = ?");
+      updateValues.push(price);
+    }
+
+    if (updateFields.length === 0) {
+      return res.status(400).json({ message: "Aucun champ à mettre à jour" });
+    }
+
+    updateValues.push(reservationId);
+
+    const query = `UPDATE reservations SET ${updateFields.join(
+      ", "
+    )}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`;
+
+    await db.query(query, updateValues);
+
+    // Récupérer la réservation mise à jour
+    const [updatedReservation] = await db.query(
+      `
+        SELECT r.*, u.fullname as user_name, res.name as ressource_name
+        FROM reservations r
+        JOIN users u ON r.user_id = u.id
+        JOIN ressources res ON r.ressource_id = res.id
+        WHERE r.id = ?
+      `,
+      [reservationId]
     );
 
-    // Si la réservation est annulée ou complétée, libérer la ressource
-    if (status === "cancelled" || status === "completed") {
-      await db.query("UPDATE ressources SET status = 'libre' WHERE id = ?", [
-        reservation.ressource_id,
-      ]);
-    } else if (status === "confirmed") {
-      await db.query("UPDATE ressources SET status = 'reserve' WHERE id = ?", [
-        reservation.ressource_id,
-      ]);
-    }
-
     res.json({
-      message: `Statut de la réservation mis à jour: ${status}`,
-      reservationId: reservationId,
-      newStatus: status,
+      message: "Réservation mise à jour avec succès",
+      reservation: updatedReservation[0],
     });
   } catch (error) {
     console.error(error);
     res
       .status(500)
-      .json({ message: "Erreur lors de la mise à jour du statut" });
+      .json({ message: "Erreur lors de la mise à jour de la réservation" });
   }
 };
 
@@ -467,8 +503,17 @@ exports.getRessourceAvailability = async (req, res) => {
     let params = [ressourceId];
 
     if (start_date && end_date) {
+      const formattedStart = formatForMySQL(start_date);
+      const formattedEnd = formatForMySQL(end_date);
+      if (!formattedStart || !formattedEnd) {
+        return res.status(400).json({
+          message: "Dates invalides",
+          details: "Les dates de début et de fin doivent être valides",
+        });
+      }
+      // on garde l'ordre : param 1 = start_date_query, param 2 = end_date_query
       query += " AND NOT (end_date <= ? OR start_date >= ?)";
-      params.push(start_date, end_date);
+      params.push(formattedStart, formattedEnd);
     }
 
     query += " ORDER BY start_date";
@@ -509,10 +554,8 @@ exports.getUserReservations = async (req, res) => {
     res.json(rows);
   } catch (error) {
     console.error(error);
-    res
-      .status(500)
-      .json({
-        message: "Erreur lors de la récupération des réservations utilisateur",
-      });
+    res.status(500).json({
+      message: "Erreur lors de la récupération des réservations utilisateur",
+    });
   }
 };
