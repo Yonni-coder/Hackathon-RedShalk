@@ -239,32 +239,6 @@ exports.createReservation = async (req, res) => {
       });
     }
 
-    // 2) Vérification de chevauchement au niveau date-only (optionnelle)
-    //    On compare les dates (YYYY-MM-DD) : s'il existe une réservation dont la plage de dates
-    //    croise [start_date_date, end_date_date] => conflit.
-    const startDateOnly = formattedStart.split(" ")[0]; // "YYYY-MM-DD"
-    const endDateOnly = formattedEnd.split(" ")[0];
-
-    const [dateConflicts] = await db.query(
-      `
-        SELECT id FROM reservations
-        WHERE ressource_id = ?
-          AND status NOT IN ('cancelled', 'completed')
-          AND DATE(start_date) <= ? 
-          AND DATE(end_date) >= ?
-        LIMIT 1
-      `,
-      [ressource_id, endDateOnly, startDateOnly]
-    );
-
-    if (dateConflicts.length > 0) {
-      return res.status(409).json({
-        message: "Conflit de réservation (date)",
-        details:
-          "La ressource est déjà réservée pour l'une des dates demandées (au niveau jour).",
-      });
-    }
-
     // Créer la réservation avec le prix fourni par le frontend (utiliser dates formatées)
     const [result] = await db.query(
       "INSERT INTO reservations (ressource_id, user_id, start_date, end_date, notes, status, price) VALUES (?, ?, ?, ?, ?, 'pending', ?)",
