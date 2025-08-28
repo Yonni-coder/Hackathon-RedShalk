@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { rolesTranslations } from "@/lib/rolesTranslations"
 import {toast} from "sonner"
+import { useAuthStore } from "@/stores/useAuthStore"
 
 const loginSchema = z.object({
     email: z.string().email("Email invalide"),
@@ -51,12 +52,16 @@ export default function Page() {
                     "Content-Type": "application/json",
                     Accept: "application/json",
                 },
+                credentials: "include",
                 body: JSON.stringify({
-                    data
+                    email: data.email,
+                    password: data.password
                 }),
             })
             const result = await response.json()
+            useAuthStore.getState().login(result.user)
             window.location.href = "/"
+
             if (!response.ok) {
                 toast.error("Une Erreur est survenue")
             }

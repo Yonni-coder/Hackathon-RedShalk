@@ -11,9 +11,12 @@ import ToggleTheme from "./toggle-theme"
 import Link from "next/link"
 import { size } from "zod"
 import { cn } from "@/lib/utils"
+import { useAuthStore } from "@/stores/useAuthStore"
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
  
 export default function Navbar () {
     const [isOpen, setIsOpen] = useState(false)
+    const { user, isAuthenticated } = useAuthStore()
     const toggleMenu = () => setIsOpen(!isOpen)
     return (
         <motion.nav
@@ -117,7 +120,20 @@ export default function Navbar () {
                             </Button>
                         </div>
                     </div>
-                    <motion.div 
+                    {isAuthenticated && user ? (
+                        <>
+                            <Avatar className="w-10 h-10 cursor-pointer">
+                                <AvatarImage
+                                    src="/assets/images/30.png"
+                                    alt="usere"
+                                />
+                                <AvatarFallback className="bg-secondary text-md font-bold">
+                                    {user.fullname.substr()}
+                                </AvatarFallback>
+                            </Avatar>
+                        </>
+                    ) : (
+                        <motion.div 
                             whileHover={{ scale: 1.05 }} 
                             whileTap={{ scale: 0.95 }}
                         >
@@ -132,6 +148,7 @@ export default function Navbar () {
                             <User  />
                         </Link>
                     </motion.div>
+                    )}
                     <ToggleTheme />
                 </div>
 
