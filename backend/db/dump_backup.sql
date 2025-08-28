@@ -47,43 +47,6 @@ INSERT INTO `companies` VALUES (1,'Vahatra',NULL,'2025-08-27 18:14:30','contact@
 UNLOCK TABLES;
 
 --
--- Table structure for table `reservations`
---
-
-DROP TABLE IF EXISTS `reservations`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `reservations` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `ressource_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `start_date` datetime NOT NULL,
-  `end_date` datetime NOT NULL,
-  `status` enum('pending','confirmed','cancelled','completed') DEFAULT 'pending',
-  `notes` text DEFAULT NULL,
-  `price` decimal(10,2) DEFAULT 0.00,
-  `created_at` timestamp NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `idx_reservations_ressource` (`ressource_id`),
-  KEY `idx_reservations_user` (`user_id`),
-  KEY `idx_reservations_dates` (`start_date`,`end_date`),
-  KEY `idx_reservations_status` (`status`),
-  CONSTRAINT `reservations_ibfk_1` FOREIGN KEY (`ressource_id`) REFERENCES `ressources` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `reservations_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `reservations`
---
-
-LOCK TABLES `reservations` WRITE;
-/*!40000 ALTER TABLE `reservations` DISABLE KEYS */;
-/*!40000 ALTER TABLE `reservations` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `ressource_photos`
 --
 
@@ -97,7 +60,7 @@ CREATE TABLE `ressource_photos` (
   PRIMARY KEY (`id`),
   KEY `ressource_id` (`ressource_id`),
   CONSTRAINT `ressource_photos_ibfk_1` FOREIGN KEY (`ressource_id`) REFERENCES `ressources` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -123,7 +86,7 @@ CREATE TABLE `ressource_types` (
   `company_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -159,7 +122,7 @@ CREATE TABLE `ressources` (
   KEY `type_id` (`type_id`),
   CONSTRAINT `ressources_ibfk_1` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id`) ON DELETE CASCADE,
   CONSTRAINT `ressources_ibfk_2` FOREIGN KEY (`type_id`) REFERENCES `ressource_types` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -168,7 +131,7 @@ CREATE TABLE `ressources` (
 
 LOCK TABLES `ressources` WRITE;
 /*!40000 ALTER TABLE `ressources` DISABLE KEYS */;
-INSERT INTO `ressources` VALUES (1,'Salle de réunion A','Salle équipée pour réunions jusqu\'à 8 personnes, vidéoprojecteur et tableau blanc.','8','toujours','2ème étage - Bâtiment B','libre',1,2,'2025-08-28 00:26:45'),(2,'Salle de réunion A','Salle équipée pour réunions jusqu\'à 8 personnes, vidéoprojecteur et tableau blanc.','8','toujours','2ème étage - Bâtiment B','libre',1,2,'2025-08-28 00:26:56');
+INSERT INTO `ressources` VALUES (1,'Salle de réunion A','Salle équipée pour réunions jusqu\'à 8 personnes, vidéoprojecteur et tableau blanc.','8','toujours','2ème étage - Bâtiment B','libre',1,2,'2025-08-28 00:26:45'),(2,'Salle de réunion A','Salle équipée pour réunions jusqu\'à 8 personnes, vidéoprojecteur et tableau blanc.','8','toujours','2ème étage - Bâtiment B','libre',1,2,'2025-08-28 00:26:56'),(3,'Salle de réunion A','Salle équipée pour réunions jusqu\'à 8 personnes, vidéoprojecteur et tableau blanc.','8','toujours','2ème étage - Bâtiment B','libre',1,2,'2025-08-28 00:26:57'),(4,'Salle de réunion A','Salle équipée pour réunions jusqu\'à 8 personnes, vidéoprojecteur et tableau blanc.','8','toujours','2ème étage - Bâtiment B','libre',1,2,'2025-08-28 00:26:58'),(5,'Salle de réunion A','Salle équipée pour réunions jusqu\'à 8 personnes, vidéoprojecteur et tableau blanc.','8','toujours','2ème étage - Bâtiment B','libre',1,2,'2025-08-28 00:26:59'),(6,'Salle de réunion A','Salle équipée pour réunions jusqu\'à 8 personnes, vidéoprojecteur et tableau blanc.','8','toujours','2ème étage - Bâtiment B','libre',1,2,'2025-08-28 00:26:59'),(7,'Salle de réunion A','Salle équipée pour réunions jusqu\'à 8 personnes, vidéoprojecteur et tableau blanc.','8','toujours','2ème étage - Bâtiment B','libre',1,2,'2025-08-28 00:27:01'),(8,'Salle de réunion A','Salle équipée pour réunions jusqu\'à 8 personnes, vidéoprojecteur et tableau blanc.','8','toujours','2ème étage - Bâtiment B','libre',1,2,'2025-08-28 00:27:01'),(9,'Salle de réunion A','Salle équipée pour réunions jusqu\'à 8 personnes, vidéoprojecteur et tableau blanc.','8','toujours','2ème étage - Bâtiment B','libre',1,2,'2025-08-28 00:27:01'),(10,'Salle de réunion A','Salle équipée pour réunions jusqu\'à 8 personnes, vidéoprojecteur et tableau blanc.','8','toujours','2ème étage - Bâtiment B','libre',1,2,'2025-08-28 00:27:01'),(11,'Salle de réunion A','Salle équipée pour réunions jusqu\'à 8 personnes, vidéoprojecteur et tableau blanc.','8','toujours','2ème étage - Bâtiment B','libre',1,2,'2025-08-28 00:27:01'),(12,'Salle de réunion A','Salle équipée pour réunions jusqu\'à 8 personnes, vidéoprojecteur et tableau blanc.','8','toujours','2ème étage - Bâtiment B','libre',1,2,'2025-08-28 00:30:22'),(13,'Salle de réunion A','Salle équipée pour réunions jusqu\'à 8 personnes, vidéoprojecteur et tableau blanc.','8','toujours','2ème étage - Bâtiment B','libre',1,2,'2025-08-28 00:30:24');
 /*!40000 ALTER TABLE `ressources` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -215,7 +178,7 @@ CREATE TABLE `tarifs` (
   PRIMARY KEY (`id`),
   KEY `ressource_id` (`ressource_id`),
   CONSTRAINT `tarifs_ibfk_1` FOREIGN KEY (`ressource_id`) REFERENCES `ressources` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -224,7 +187,6 @@ CREATE TABLE `tarifs` (
 
 LOCK TABLES `tarifs` WRITE;
 /*!40000 ALTER TABLE `tarifs` DISABLE KEYS */;
-INSERT INTO `tarifs` VALUES (1,1,10000.00,20000.00,30000.00,50000.00,100000.00),(2,2,1000000.00,3000000.00,400000.00,6000000.00,8000000.00);
 /*!40000 ALTER TABLE `tarifs` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -271,4 +233,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-08-28  8:49:49
+-- Dump completed on 2025-08-28  3:38:03
