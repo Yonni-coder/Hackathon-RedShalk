@@ -147,7 +147,7 @@ export default function RegisterPage() {
                                         initial={{ opacity: 0, x: -20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ delay: 0.7 }}
-                                        className="flex items-center gap-2"
+                                        className="flex items-start gap-2"
                                     >
                                         <div className="space-y-2">
                                             <Label htmlFor="name" className="text-sm font-medium">
@@ -172,7 +172,7 @@ export default function RegisterPage() {
                                             }
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="name" className="text-sm font-medium">
+                                            <Label htmlFor="prenom" className="text-sm font-medium">
                                                 Prénom : <span className="text-sm text-red-500">*</span>
                                             </Label>
                                             <div className="relative">
@@ -187,9 +187,9 @@ export default function RegisterPage() {
                                                     {...register("prenom")}
                                                 />
                                             </div>
-                                            {errors.nom && 
+                                            {errors.prenom && 
                                                 <span className="text-sm text-red-500">
-                                                    {errors.nom.message}
+                                                    {errors.prenom.message}
                                                 </span>
                                             }
                                         </div>

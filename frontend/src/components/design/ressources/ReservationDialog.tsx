@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, Euro } from 'lucide-react';
+import { Calendar, Clock, Euro, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Dialog, DialogHeader, DialogDescription, DialogTitle, DialogContent, DialogFooter } from '@/components/ui/dialog';
@@ -16,9 +16,10 @@ interface ReservationDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (reservationData: ReservationData) => void;
+  reserveLoading: boolean;
 }
 
-export function ReservationDialog({ room, isOpen, onClose, onConfirm }: ReservationDialogProps) {
+export function ReservationDialog({ room, isOpen, onClose, onConfirm, reserveLoading }: ReservationDialogProps) {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [priceData, setPriceData] = useState<{
@@ -49,9 +50,9 @@ export function ReservationDialog({ room, isOpen, onClose, onConfirm }: Reservat
         price: priceData.price,
         duration_type: priceData.duration_type as 'hours' | 'days' | 'weeks' | 'months' | 'years',
         duration_count: priceData.duration_count,
+        ressource_id: room.id,
       };
       onConfirm(reservationData);
-      onClose();
     }
   };
 
@@ -88,13 +89,13 @@ export function ReservationDialog({ room, isOpen, onClose, onConfirm }: Reservat
     <main className="flex gap-2">
         <div className="space-y-4 w-full">
       {/* Room info - occupe les 2 colonnes */}
-      <div className="bg-gray-50 p-4 rounded-lg">
+      <div className="bg-gray-50 dark:bg-secondary dark:text-white p-4 rounded-lg">
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-semibold">{room.name}</h3>
           <span className="text-sm text-gray-500">{room.location}</span>
         </div>
-        <p className="text-sm text-gray-600 mb-2">{room.description}</p>
-        <div className="flex items-center gap-4 text-sm text-gray-500">
+        <p className="text-sm text-gray-600 dark:text-white mb-2">{room.description}</p>
+        <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-white">
           <span>Capacité: {room.capacity} personnes</span>
           <span>•</span>
           <span>{room.company_name}</span>
@@ -152,7 +153,7 @@ export function ReservationDialog({ room, isOpen, onClose, onConfirm }: Reservat
         )}
 
         {/* Tarif information */}
-        <div className="bg-gray-50 p-3 rounded-lg text-xs text-gray-600 col-span-2">
+        <div className="bg-gray-50 dark:bg-secondary dark:text-white p-3 rounded-lg text-xs text-gray-600 col-span-2">
             <p className="font-semibold mb-1">Tarifs de référence:</p>
             <div className="grid grid-cols-2 gap-2">
             <span>Heure: {formatPrice(parseFloat(room.tarifs.tarif_h))}</span>
@@ -170,10 +171,10 @@ export function ReservationDialog({ room, isOpen, onClose, onConfirm }: Reservat
       </Button>
       <Button
         onClick={handleConfirm}
-        disabled={!startDate || !endDate || !priceData}
+        disabled={!startDate || !endDate || !priceData || reserveLoading}
         className="bg-blue-600 hover:bg-blue-700"
       >
-        <Clock className="w-4 h-4 mr-2" />
+        {reserveLoading ? <Loader2 className="mr-2 h-4 w-4 animate-pulse" /> : <Clock className="w-4 h-4 mr-2" />}
         Confirmer la réservation
       </Button>
     </DialogFooter>

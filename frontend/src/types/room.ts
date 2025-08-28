@@ -31,4 +31,5 @@ export interface ReservationData {
   price: number;
   duration_type: 'hours' | 'days' | 'weeks' | 'months' | 'years';
   duration_count: number;
+  ressource_id: number;
 }
