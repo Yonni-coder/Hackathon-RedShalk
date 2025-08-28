@@ -147,3 +147,49 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+-- table ressources pour illustrer les sales de reunion, bureaux, etc.
+CREATE TABLE ressources (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  capacity INT DEFAULT NULL,
+  availability VARCHAR(255) DEFAULT NULL, -- texte explicatif des plages horaires
+  location VARCHAR(255) NOT NULL,
+  status ENUM('libre','reserve','indisponible') DEFAULT 'libre',
+  company_id INT NOT NULL,
+  type_id INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+  FOREIGN KEY (type_id) REFERENCES ressource_types(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- table types de ressources (salle de reunion, bureau, etc.)
+CREATE TABLE ressource_types (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL UNIQUE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- tarifs personnalisés pour chaque ressource
+CREATE TABLE tarifs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  ressource_id INT NOT NULL,
+  tarif_h DECIMAL(10,2) DEFAULT NULL,
+  tarif_j DECIMAL(10,2) DEFAULT NULL,
+  tarif_sem DECIMAL(10,2) DEFAULT NULL,
+  tarif_mois DECIMAL(10,2) DEFAULT NULL,
+  tarif_an DECIMAL(10,2) DEFAULT NULL,
+  FOREIGN KEY (ressource_id) REFERENCES ressources(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- photos des ressources
+CREATE TABLE ressource_photos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  ressource_id INT NOT NULL,
+  photo_url VARCHAR(255) NOT NULL,
+  FOREIGN KEY (ressource_id) REFERENCES ressources(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+

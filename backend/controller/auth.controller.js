@@ -91,9 +91,27 @@ exports.login = async (req, res) => {
       });
     }
 
+    // Récupérer les informations de l'entreprise si company_id existe
+    let companyInfo = null;
+    if (user.company_id) {
+      const [companyRows] = await db.query(
+        "SELECT id, name, email, phone, address FROM companies WHERE id = ?",
+        [user.company_id]
+      );
+
+      if (companyRows.length > 0) {
+        companyInfo = companyRows[0];
+      }
+    }
+
     // Générer un token JWT
     const token = jwt.sign(
-      { userId: user.id, email: user.email, role: user.role },
+      {
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+        company_id: user.company_id,
+      },
       process.env.JWT_SECRET || "votre_secret_jwt",
       { expiresIn: "24h" }
     );
@@ -105,18 +123,23 @@ exports.login = async (req, res) => {
       sameSite: "strict",
       maxAge: 24 * 60 * 60 * 1000, // 24 heures
     });
-    //Recuperer toutes les infos sur le company
-    //
+
+    // Préparer la réponse
+    const userResponse = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      fullname: user.fullname,
+      phone: user.phone,
+      company_id: user.company_id,
+      company: companyInfo, // Inclure les infos complètes de l'entreprise
+      is_active: user.is_active,
+      created_at: user.created_at,
+    };
 
     res.json({
       message: "Connexion réussie",
-      user: {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        fullname: user.fullname,
-        company_id: user.company_id,
-      },
+      user: userResponse,
     });
   } catch (error) {
     console.error(error);
