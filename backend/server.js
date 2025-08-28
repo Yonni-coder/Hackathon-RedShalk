@@ -67,6 +67,9 @@ app.use("/api/ressources", require("./routes/ressources.routes"));
 app.use("/api/types", require("./routes/type.routes"));
 app.use("/api/cart", require("./routes/cart.routes"));
 
+//Recuperer cart et cart items
+app.use("/api/achat", require("./routes/achat.routes"));
+
 // nouvelles routes
 // app.use("/api/panier", panierRoutes);
 // app.use("/api/paiement", paiementRoutes);
