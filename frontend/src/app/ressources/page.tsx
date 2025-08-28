@@ -99,7 +99,7 @@ export default function Page() {
         if (response.ok) {
             toast.success("Reservation transmit")
             handleCloseReservationDialog()
-            addItem(result.reservation)
+            addItem(result.cartItem)
         }
         if (!response.ok) {
           toast.error(result.details)
