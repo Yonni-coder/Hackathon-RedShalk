@@ -163,7 +163,7 @@ exports.createReservation = async (req, res) => {
     if (!ressource_id) missingFields.push("ressource_id");
     if (!start_date) missingFields.push("start_date");
     if (!end_date) missingFields.push("end_date");
-    if (price === undefined || price === null) missingFields.push("price"); // Prix requis
+    if (price === undefined || price === null) missingFields.push("price");
 
     if (missingFields.length > 0) {
       return res.status(400).json({
@@ -171,11 +171,10 @@ exports.createReservation = async (req, res) => {
         details: `Les champs suivants sont requis : ${missingFields.join(
           ", "
         )}`,
-        missingFields: missingFields,
+        missingFields,
       });
     }
 
-    // Vérifier que le prix est valide
     if (isNaN(price) || price < 0) {
       return res.status(400).json({
         message: "Prix invalide",
@@ -183,14 +182,13 @@ exports.createReservation = async (req, res) => {
       });
     }
 
-    // Vérifier que les dates sont valides (JS Date)
     const startDateObj = new Date(start_date);
     const endDateObj = new Date(end_date);
 
     if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
       return res.status(400).json({
         message: "Dates invalides",
-        details: "Les dates de début et de fin doivent être au format valide",
+        details: "Les dates doivent être valides",
       });
     }
 
@@ -203,29 +201,18 @@ exports.createReservation = async (req, res) => {
 
     // Vérifier que la ressource existe
     const [ressourceRows] = await db.query(
-      `SELECT r.*, comp.id as company_id
-         FROM ressources r 
-         JOIN companies comp ON r.company_id = comp.id
-         WHERE r.id = ?`,
+      `SELECT * FROM ressources WHERE id = ?`,
       [ressource_id]
     );
-
     if (ressourceRows.length === 0) {
       return res.status(404).json({ message: "Ressource non trouvée" });
     }
 
-    // Formater pour MySQL (YYYY-MM-DD HH:MM:SS)
+    // Formater les dates
     const formattedStart = formatForMySQL(start_date);
     const formattedEnd = formatForMySQL(end_date);
 
-    if (!formattedStart || !formattedEnd) {
-      return res.status(400).json({
-        message: "Dates invalides",
-        details: "Les dates de début et de fin doivent être au format valide",
-      });
-    }
-
-    // 1) Vérification de chevauchement au niveau datetime (précis)
+    // Vérifier conflits
     const hasConflict = await checkReservationConflict(
       ressource_id,
       formattedStart,
@@ -234,14 +221,14 @@ exports.createReservation = async (req, res) => {
     if (hasConflict) {
       return res.status(409).json({
         message: "Conflit de réservation",
-        details:
-          "La ressource est déjà réservée pour cette période (chevauchement horaire).",
+        details: "Cette ressource est déjà réservée pour cette période",
       });
     }
 
-    // Créer la réservation avec le prix fourni par le frontend (utiliser dates formatées)
+    // 1) Créer la réservation
     const [result] = await db.query(
-      "INSERT INTO reservations (ressource_id, user_id, start_date, end_date, notes, status, price) VALUES (?, ?, ?, ?, ?, 'pending', ?)",
+      `INSERT INTO reservations (ressource_id, user_id, start_date, end_date, notes, status, price)
+       VALUES (?, ?, ?, ?, ?, 'pending', ?)`,
       [
         ressource_id,
         user_id,
@@ -252,42 +239,66 @@ exports.createReservation = async (req, res) => {
       ]
     );
 
-    // Mettre à jour le statut de la ressource
-    // await db.query("UPDATE ressources SET status = 'reserve' WHERE id = ?", [
-    //   ressource_id,
-    // ]);
-
-    // Récupérer la réservation créée
+    // Récupérer la réservation
     const [newReservation] = await db.query(
-      `
-        SELECT r.*, u.fullname as user_name, res.name as ressource_name
-        FROM reservations r
-        JOIN users u ON r.user_id = u.id
-        JOIN ressources res ON r.ressource_id = res.id
-        WHERE r.id = ?
-      `,
+      `SELECT r.*, u.fullname as user_name, res.name as ressource_name
+       FROM reservations r
+       JOIN users u ON r.user_id = u.id
+       JOIN ressources res ON r.ressource_id = res.id
+       WHERE r.id = ?`,
       [result.insertId]
     );
 
+    // 2) Ajouter la réservation dans le panier (logique addToCart)
+    let [cartRows] = await db.query(
+      `SELECT * FROM carts WHERE user_id = ? AND status = 'active'`,
+      [user_id]
+    );
+
+    let cartId;
+    if (cartRows.length === 0) {
+      const [newCart] = await db.query(
+        `INSERT INTO carts (user_id, total_price, status) VALUES (?, 0, 'active')`,
+        [user_id]
+      );
+      cartId = newCart.insertId;
+    } else {
+      cartId = cartRows[0].id;
+    }
+
+    const [cartItemResult] = await db.query(
+      `INSERT INTO cart_items (cart_id, ressource_id, start_date, end_date, price, notes)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [cartId, ressource_id, formattedStart, formattedEnd, price, notes || null]
+    );
+
+    await db.query(
+      `UPDATE carts SET total_price = total_price + ? WHERE id = ?`,
+      [price, cartId]
+    );
+
+    const [newCartItem] = await db.query(
+      `SELECT ci.*, r.name as ressource_name
+       FROM cart_items ci
+       JOIN ressources r ON ci.ressource_id = r.id
+       WHERE ci.id = ?`,
+      [cartItemResult.insertId]
+    );
+
+    // 3) Retourner la réponse combinée
     res.status(201).json({
-      message:
-        "Réservation créée avec succès. En attente de validation par le manager.",
+      message: "Réservation créée et ajoutée au panier avec succès",
       reservation: newReservation[0],
+      cartItem: newCartItem[0],
     });
   } catch (error) {
     console.error(error);
-    if (
-      String(error).includes("Dates invalides") ||
-      String(error).includes("Invalid dates")
-    ) {
-      return res.status(400).json({
-        message: "Dates invalides",
-        details: error.message,
-      });
-    }
     res
       .status(500)
-      .json({ message: "Erreur lors de la création de la réservation" });
+      .json({
+        message:
+          "Erreur lors de la création de la réservation et l'ajout au panier",
+      });
   }
 };
 
