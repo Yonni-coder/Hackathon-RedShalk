@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion"
 import Logo from "../design/logo"
 import ActiveLink from "./active-link"
-import { Building2, Calendar, ChevronDown, Eye, Gift, Home, Menu, User, X } from "lucide-react"
+import { Bell, Building2, Calendar, ChevronDown, Eye, Gift, Home, Menu, ShoppingCart, User, X } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu"
 import { Button, buttonVariants } from "../ui/button"
 import { useEffect, useState } from "react"
@@ -126,6 +126,21 @@ export default function Navbar () {
                             </Button>
                         </div>
                     </div>
+                    <motion.div 
+                        whileHover={{ scale: 1.05 }} 
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        <Link 
+                            href="/checkout"
+                            className={cn(
+                                buttonVariants({
+                                variant: "outline",
+                                size: "icon"
+                            }), "rounded-xl px-4 py-2 transition-colors duration-300")}
+                        >
+                            <ShoppingCart />
+                        </Link>
+                    </motion.div>
                     {isAuthenticated && user ? (
                         <>
                             <Avatar className="w-10 h-10 cursor-pointer">

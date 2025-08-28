@@ -1,8 +1,8 @@
 "use client"
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Users, MapPin, Building2, Star } from 'lucide-react';
+import { Users, MapPin, Building2, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Room } from '@/types/room';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -32,26 +32,82 @@ export function RoomCard({ room, onReserve }: RoomCardProps) {
   // Extract features from description (simple parsing)
   const features = room.description.split(',').map(f => f.trim()).filter(f => f.length > 0).slice(0, 3);
 
+  const [currentIndex, setCurrentIndex] = useState(0)
+
+  const handlePrev = () => {
+    setCurrentIndex((prev) =>
+      prev === 0 ? room.photos.length - 1 : prev - 1
+    )
+  }
+
+  const handleNext = () => {
+    setCurrentIndex((prev) =>
+      prev === room.photos.length - 1 ? 0 : prev + 1
+    )
+  }
+
   return (
     <motion.div variants={fadeInUp} whileHover={{ y: -8, transition: { duration: 0.3 } }}>
       <Card className="overflow-hidden h-full hover:shadow-xl transition-shadow duration-300">
         <div className="relative">
-          <img
-            src="/placeholder.svg"
-            alt={room.name}
-            className="w-full h-48 object-cover bg-gradient-to-br from-blue-100 to-purple-100"
-          />
-          <div className="absolute top-4 left-4">
-            <Badge variant={isAvailable ? "default" : "secondary"}>
-              {isAvailable ? "Disponible" : "Occupé"}
-            </Badge>
-          </div>
-          <div className="absolute top-4 right-4">
-            <Badge variant="outline" className="bg-background/80">
-              {room.type_name}
-            </Badge>
-          </div>
+      {/* Image affichée */}
+      <img
+        src={`/assets/images/all/${room.photos?.[currentIndex]?.photo_url}` || "/placeholder.svg"}
+        alt={room.name}
+        className="w-full h-48 object-cover rounded-lg"
+      />
+
+      {/* Badge disponibilité */}
+      <div className="absolute top-4 left-4">
+        <Badge variant={isAvailable ? "default" : "secondary"}>
+          {isAvailable ? "Disponible" : "Occupé"}
+        </Badge>
+      </div>
+
+      {/* Badge type */}
+      <div className="absolute top-4 right-4">
+        <Badge variant="outline" className="bg-background/80">
+          {room.type_name}
+        </Badge>
+      </div>
+
+      {/* Boutons navigation */}
+      {room.photos?.length > 1 && (
+        <>
+          <Button
+            size="icon"
+            variant="secondary"
+            className="absolute top-1/2 left-2 -translate-y-1/2 rounded-full shadow-md"
+            onClick={handlePrev}
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+
+          <Button
+            size="icon"
+            variant="secondary"
+            className="absolute top-1/2 right-2 -translate-y-1/2 rounded-full shadow-md"
+            onClick={handleNext}
+          >
+            <ChevronRight className="h-5 w-5" />
+          </Button>
+        </>
+      )}
+
+      {/* Petits indicateurs */}
+      {room.photos?.length > 1 && (
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2">
+          {room.photos.map((_, index) => (
+            <div
+              key={index}
+              className={`w-2 h-2 rounded-full ${
+                index === currentIndex ? "bg-white" : "bg-gray-400/60"
+              }`}
+            />
+          ))}
         </div>
+      )}
+    </div>
 
         <CardHeader>
           <div className="flex items-start justify-between">
@@ -87,13 +143,13 @@ export function RoomCard({ room, onReserve }: RoomCardProps) {
               <div className="flex flex-wrap gap-2">
                 {features.map((feature, idx) => (
                   <Badge key={idx} variant="secondary" className="text-xs">
-                    {feature}
+                    {feature.substring(0, 35) + (feature.length > 35 ? "..." : "")}
                   </Badge>
                 ))}
               </div>
             )}
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between w-full">
               <div>
                 <span className="text-2xl font-bold text-primary">
                   {formatPrice(basePrice)}
