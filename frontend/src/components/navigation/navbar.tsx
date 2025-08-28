@@ -120,7 +120,7 @@ export default function Navbar () {
                             </Button>
                         </div>
                     </div>
-                    {isAuthenticated ? (
+                    {isAuthenticated && user ? (
                         <>
                             <Avatar className="w-10 h-10 cursor-pointer">
                                 <AvatarImage

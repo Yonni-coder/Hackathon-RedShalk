@@ -43,6 +43,7 @@ export default function TypesForm () {
                     "Content-Type": "application/json",
                     Accept: "application/json",
                 },
+                credentials: "include",
                 body: JSON.stringify({
                     name: data.nom,
                     description: data.description
@@ -64,7 +65,7 @@ export default function TypesForm () {
     return (
         <Card className="flex-1">
             <CardHeader>
-                <CardTitle>
+                <CardTitle className="text-2xl font-bold">
                     Types de Ressources
                 </CardTitle>
                 <CardDescription>
