@@ -6,7 +6,7 @@ import ActiveLink from "./active-link"
 import { Building2, Calendar, ChevronDown, Eye, Gift, Home, Menu, User, X } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu"
 import { Button, buttonVariants } from "../ui/button"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import ToggleTheme from "./toggle-theme"
 import Link from "next/link"
 import { size } from "zod"
@@ -14,12 +14,14 @@ import { cn } from "@/lib/utils"
 import { useAuthStore } from "@/stores/useAuthStore"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 import { usePathname } from "next/navigation"
+import useRoomsStore from "@/stores/roomsStore"
  
 export default function Navbar () {
     const [isOpen, setIsOpen] = useState(false)
     const { user, isAuthenticated } = useAuthStore()
     const pathname = usePathname()
     const toggleMenu = () => setIsOpen(!isOpen)
+    
     return (
         <motion.nav
             initial={{ y: -100 }}
