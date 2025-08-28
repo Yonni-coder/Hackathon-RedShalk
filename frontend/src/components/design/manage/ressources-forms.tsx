@@ -56,6 +56,8 @@ export default function RessourcesForm () {
             loadTypes()
         }, [])
 
+        console.log(types)
+
     const onSubmit = async (data: ressourceFormValues) => {
         setLoading(true)
         try {

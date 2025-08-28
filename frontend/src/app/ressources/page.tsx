@@ -6,13 +6,16 @@ import { RoomSkeletonGrid } from "@/components/design/ressources/RoomSkeleton";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 import { useInfiniteRooms } from "@/hooks/useInfiniteRooms";
+import { useCartStore } from "@/stores/cartStore";
 import useRoomsStore from "@/stores/roomsStore";
 import { ReservationData, Room } from "@/types/room";
 import { motion } from "framer-motion";
 import { Building2, Filter, MapPin, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useInView } from "react-intersection-observer";
+import { toast } from "sonner";
 
 const staggerContainer = {
   initial: {},
@@ -28,6 +31,9 @@ export default function Page() {
   const [isReservationDialogOpen, setIsReservationDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('all');
+  const [reserveLoading, setReserveLoading] = useState(false)
+  const { setRooms } = useRoomsStore()
+  const { addItem } = useCartStore()
   
   const sampleRooms = useRoomsStore((s) => s.rooms)
 
@@ -44,7 +50,7 @@ export default function Page() {
     }
 
     return filtered;
-  }, [searchTerm]);
+  }, [searchTerm, sampleRooms]);
 
   // Get unique room types for filter
   const roomTypes = useMemo(() => {
@@ -72,13 +78,37 @@ export default function Page() {
     setIsReservationDialogOpen(true);
   };
 
-  const handleReservationConfirm = (reservationData: ReservationData) => {
-    console.log('Reservation confirmed:', {
-      room: selectedRoom,
-      reservationData,
-    });
-    // Here you would typically send the reservation data to your backend
-    alert(`Réservation confirmée pour ${selectedRoom?.name}!\nDurée: ${reservationData.duration_count} ${reservationData.duration_type}\nPrix: ${reservationData.price}€`);
+  const handleReservationConfirm = async (reservationData: ReservationData) => {
+    setReserveLoading(true)
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/reservations`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify({
+                price: reservationData.price,
+                start_date: reservationData.start_date,
+                end_date: reservationData.end_date,
+                ressource_id: reservationData.ressource_id,
+            }),
+        })
+        const result = await response.json()
+        if (response.ok) {
+            toast.success("Reservation transmit")
+            handleCloseReservationDialog()
+            addItem(result.reservation)
+        }
+        if (!response.ok) {
+          toast.error(result.details)
+        }
+    } catch (err) {
+        console.error(err)
+    } finally {
+        setReserveLoading(false)
+    }
   };
 
   const handleCloseReservationDialog = () => {
@@ -87,7 +117,7 @@ export default function Page() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
+    <div className="min-h-screen border-l-1 border-r-1 border-secondary">
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <motion.div
@@ -96,10 +126,10 @@ export default function Page() {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold text-primary mb-4">
             Nos Espaces de Travail
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-xl text-gray-600 dark:text-white max-w-3xl mx-auto">
             Découvrez nos salles équipées et réservez l'espace parfait pour vos besoins professionnels
           </p>
         </motion.div>
@@ -119,13 +149,13 @@ export default function Page() {
                 placeholder="Rechercher une salle..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-white/70 backdrop-blur-sm border-gray-200 focus:border-blue-300"
+                className="pl-10 bg-white/70 backdrop-blur-sm focus:border-blue-300"
               />
             </div>
 
             {/* Type Filter */}
             <div className="flex items-center gap-4">
-              <Filter className="w-5 h-5 text-gray-500" />
+              <Filter className="w-5 h-5 text-gray-500 dark:text-white" />
               <Select value={selectedTypeFilter} onValueChange={setSelectedTypeFilter}>
                 <SelectTrigger className="w-48 bg-white/70 backdrop-blur-sm">
                   <SelectValue placeholder="Type de salle" />
@@ -143,7 +173,7 @@ export default function Page() {
           </div>
 
           {/* Stats */}
-          <div className="flex flex-wrap gap-4 items-center text-sm text-gray-600">
+          <div className="flex flex-wrap gap-4 items-center text-sm text-gray-600 dark:text-white">
             <div className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               <span>{rooms.length} salles disponibles</span>
@@ -163,7 +193,7 @@ export default function Page() {
 
         {/* Rooms Grid */}
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
           variants={staggerContainer}
           initial="initial"
           animate="animate"
@@ -215,6 +245,7 @@ export default function Page() {
           isOpen={isReservationDialogOpen}
           onClose={handleCloseReservationDialog}
           onConfirm={handleReservationConfirm}
+          reserveLoading={reserveLoading}
         />
       </div>
     </div>
