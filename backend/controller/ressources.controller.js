@@ -2,6 +2,7 @@
 const db = require("../db/connectDB");
 
 // Création d'une ressource
+// Création d'une ressource (avec latitude, longitude, postalCode, address, city)
 exports.createRessource = async (req, res) => {
   try {
     const {
@@ -10,6 +11,11 @@ exports.createRessource = async (req, res) => {
       capacity,
       availability,
       location,
+      latitude,
+      longitude,
+      postalCode,
+      address,
+      city,
       status,
       type_id,
       tarifs,
@@ -22,7 +28,7 @@ exports.createRessource = async (req, res) => {
 
     if (!name) missingFields.push("name");
     if (!description) missingFields.push("description");
-    if (!capacity) missingFields.push("capacity");
+    if (!capacity && capacity !== 0) missingFields.push("capacity");
     if (!availability) missingFields.push("availability");
     if (!location) missingFields.push("location");
     if (!type_id) missingFields.push("type_id");
@@ -33,16 +39,84 @@ exports.createRessource = async (req, res) => {
         details: `Les champs suivants sont requis : ${missingFields.join(
           ", "
         )}`,
-        missingFields: missingFields,
+        missingFields,
       });
     }
 
     // Validation du type de capacité
-    if (isNaN(capacity) || capacity <= 0) {
+    if (isNaN(capacity) || Number(capacity) <= 0) {
       return res.status(400).json({
         message: "Capacité invalide",
         details: "La capacité doit être un nombre positif",
       });
+    }
+
+    // Validation latitude / longitude (si fournis)
+    if (
+      latitude !== undefined &&
+      latitude !== null &&
+      `${latitude}`.trim() !== ""
+    ) {
+      const latNum = Number(latitude);
+      if (isNaN(latNum) || latNum < -90 || latNum > 90) {
+        return res.status(400).json({
+          message: "Latitude invalide",
+          details: "La latitude doit être un nombre entre -90 et 90",
+        });
+      }
+    }
+
+    if (
+      longitude !== undefined &&
+      longitude !== null &&
+      `${longitude}`.trim() !== ""
+    ) {
+      const lonNum = Number(longitude);
+      if (isNaN(lonNum) || lonNum < -180 || lonNum > 180) {
+        return res.status(400).json({
+          message: "Longitude invalide",
+          details: "La longitude doit être un nombre entre -180 et 180",
+        });
+      }
+    }
+
+    // Validation postalCode / address / city (si fournis)
+    if (
+      postalCode !== undefined &&
+      postalCode !== null &&
+      `${postalCode}`.trim() !== ""
+    ) {
+      const pc = `${postalCode}`.trim();
+      if (pc.length > 20) {
+        return res.status(400).json({
+          message: "Code postal invalide",
+          details: "Le code postal ne doit pas dépasser 20 caractères",
+        });
+      }
+    }
+
+    if (
+      address !== undefined &&
+      address !== null &&
+      `${address}`.trim() !== ""
+    ) {
+      const addr = `${address}`.trim();
+      if (addr.length > 255) {
+        return res.status(400).json({
+          message: "Adresse invalide",
+          details: "L'adresse est trop longue (max 255 caractères)",
+        });
+      }
+    }
+
+    if (city !== undefined && city !== null && `${city}`.trim() !== "") {
+      const ct = `${city}`.trim();
+      if (ct.length > 100) {
+        return res.status(400).json({
+          message: "Ville invalide",
+          details: "Le nom de la ville est trop long (max 100 caractères)",
+        });
+      }
     }
 
     // Validation du type_id (doit exister dans la table ressource_types)
@@ -58,22 +132,31 @@ exports.createRessource = async (req, res) => {
       });
     }
 
-    // Insertion de la ressource
-    const [result] = await db.query(
-      `INSERT INTO ressources (name, description, capacity, availability, location, status, company_id, type_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        name,
-        description,
-        capacity,
-        availability,
-        location,
-        status || "libre",
-        company_id,
-        type_id,
-      ]
-    );
+    // Insertion de la ressource (on inclut les nouveaux champs)
+    const insertQuery = `
+      INSERT INTO ressources
+        (name, description, capacity, availability, location,
+         latitude, longitude, postalCode, address, city,
+         status, company_id, type_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    const insertValues = [
+      name,
+      description,
+      capacity,
+      availability,
+      location,
+      latitude || null,
+      longitude || null,
+      postalCode || null,
+      address || null,
+      city || null,
+      status || "libre",
+      company_id,
+      type_id,
+    ];
 
+    const [result] = await db.query(insertQuery, insertValues);
     const ressourceId = result.insertId;
 
     // Insertion des tarifs si présents
@@ -99,7 +182,7 @@ exports.createRessource = async (req, res) => {
           details: `Les tarifs suivants sont invalides : ${invalidTarifs.join(
             ", "
           )}. Ils doivent être des nombres positifs.`,
-          invalidTarifs: invalidTarifs,
+          invalidTarifs,
         });
       }
 
@@ -135,7 +218,7 @@ exports.createRessource = async (req, res) => {
         return res.status(400).json({
           message: "Photos invalides",
           details: `${invalidPhotos.length} photo(s) contiennent des URLs invalides`,
-          invalidPhotos: invalidPhotos,
+          invalidPhotos,
         });
       }
 
@@ -149,13 +232,20 @@ exports.createRessource = async (req, res) => {
 
     res.status(201).json({
       message: "Ressource créée avec succès",
-      ressourceId: ressourceId,
+      ressourceId,
       details: {
-        name: name,
-        type_id: type_id,
-        capacity: capacity,
+        name,
+        type_id,
+        capacity,
         tarifsAdded: !!tarifs,
         photosAdded: photos && Array.isArray(photos) ? photos.length : 0,
+        location,
+        latitude: latitude || null,
+        longitude: longitude || null,
+        postalCode: postalCode || null,
+        address: address || null,
+        city: city || null,
+        status: status || "libre",
       },
     });
   } catch (error) {
