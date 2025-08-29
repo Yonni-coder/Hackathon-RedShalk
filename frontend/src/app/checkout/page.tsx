@@ -148,7 +148,7 @@ function adaptApiItems(apiItems: any[]): any[] {
     return {
       id: String(it.id),
       roomId: String(it.ressource_id),
-      roomName: `Salle #${it.ressource_id}`, // à remplacer si tu récupères le vrai nom
+      roomName: `Salle #${it.ressource_name}`, // à remplacer si tu récupères le vrai nom
       price: parseFloat(it.price),
       date: start.toISOString().split("T")[0],
       startTime: start.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
@@ -286,6 +286,10 @@ export default function Page () {
         // générer pdf et le télécharger
         try {
         generateReceiptPdf(bookingData)
+        await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/cart/clear`, {
+            method: "DELETE",
+            credentials: "include"
+        })
         // optionnel: stocker la réservation côté client/serveur ici
         // localStorage.setItem("lastBooking", JSON.stringify(bookingData))
         // clearCart() si tu veux vider le panier après le téléchargement
@@ -305,8 +309,6 @@ export default function Page () {
         }
     
     }
-
-    console.log(items)
 
     return (
         <div className="min-h-screen bg-background">
@@ -336,7 +338,7 @@ export default function Page () {
                                     id="email"
                                     type="email"
                                     required
-                                    value={formData.email}
+                                    value={formData.email ?? ""}
                                     onChange={(e) => handleInputChange("email", e.target.value)}
                                     className="mt-1"
                                     />
@@ -347,7 +349,7 @@ export default function Page () {
                                     <Input
                                         id="firstName"
                                         required
-                                        value={formData.firstName}
+                                        value={formData.firstName ?? ""}
                                         onChange={(e) => handleInputChange("firstName", e.target.value)}
                                         className="mt-1"
                                     />
@@ -357,7 +359,7 @@ export default function Page () {
                                     <Input
                                         id="lastName"
                                         required
-                                        value={formData.lastName}
+                                        value={formData.lastName ?? ""}
                                         onChange={(e) => handleInputChange("lastName", e.target.value)}
                                         className="mt-1"
                                     />
@@ -367,7 +369,7 @@ export default function Page () {
                                     <Label htmlFor="company">Entreprise</Label>
                                     <Input
                                     id="company"
-                                    value={formData.company}
+                                    value={formData.company ?? ""}
                                     onChange={(e) => handleInputChange("company", e.target.value)}
                                     className="mt-1"
                                     />
@@ -391,7 +393,7 @@ export default function Page () {
                                         id="phoneNumber"
                                         required
                                         placeholder="+261 32 xx xxx xx"
-                                        value={formData.phoneNumber}
+                                        value={formData.phoneNumber ?? ""}
                                         onChange={(e) =>
                                         handleInputChange("phoneNumber", e.target.value.replace(/\D/g, ""))
                                         }
@@ -405,7 +407,7 @@ export default function Page () {
                                         id="transactionId"
                                         required
                                         placeholder="Ex: OM123456789"
-                                        value={formData.transactionId}
+                                        value={formData.transactionId ?? ""}
                                         onChange={(e) => handleInputChange("transactionId", e.target.value)}
                                         className="mt-1"
                                     />
