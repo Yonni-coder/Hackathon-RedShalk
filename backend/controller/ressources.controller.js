@@ -388,32 +388,75 @@ exports.getAllRessources = async (req, res) => {
     const [rows] = await db.query(
       `SELECT r.*, t.name AS type_name, c.name AS company_name 
        FROM ressources r 
-       JOIN ressource_types t ON r.type_id=t.id 
-       JOIN companies c ON r.company_id=c.id`
+       JOIN ressource_types t ON r.type_id = t.id 
+       JOIN companies c ON r.company_id = c.id`
     );
 
-    // Pour chaque ressource, récupérer les tarifs et les photos
-    for (let i = 0; i < rows.length; i++) {
-      const ressource = rows[i];
+    // Récupérer tarifs + photos pour chaque ressource en parallèle
+    const enriched = await Promise.all(
+      rows.map(async (ressource) => {
+        const [tarifs] = await db.query(
+          `SELECT * FROM tarifs WHERE ressource_id = ?`,
+          [ressource.id]
+        );
 
-      // Récupérer les tarifs
-      const [tarifs] = await db.query(
-        `SELECT * FROM tarifs WHERE ressource_id = ?`,
-        [ressource.id]
-      );
+        const [photos] = await db.query(
+          `SELECT * FROM ressource_photos WHERE ressource_id = ? ORDER BY id`,
+          [ressource.id]
+        );
 
-      // Récupérer les photos
-      const [photos] = await db.query(
-        `SELECT * FROM ressource_photos WHERE ressource_id = ?`,
-        [ressource.id]
-      );
+        // Normaliser latitude / longitude en Number (ou null si absent / invalide)
+        const latRaw = ressource.latitude;
+        const lonRaw = ressource.longitude;
+        const latitude =
+          latRaw !== null && latRaw !== undefined && `${latRaw}`.trim() !== ""
+            ? Number.parseFloat(latRaw)
+            : null;
+        const longitude =
+          lonRaw !== null && lonRaw !== undefined && `${lonRaw}`.trim() !== ""
+            ? Number.parseFloat(lonRaw)
+            : null;
 
-      // Ajouter les tarifs et photos à l'objet ressource
-      ressource.tarifs = tarifs.length > 0 ? tarifs[0] : null;
-      ressource.photos = photos;
-    }
+        // Si parseFloat renvoie NaN, on met null
+        const safeLatitude = Number.isNaN(latitude) ? null : latitude;
+        const safeLongitude = Number.isNaN(longitude) ? null : longitude;
 
-    res.json(rows);
+        // Garantir les champs address / city / postalCode
+        const address =
+          ressource.address !== undefined &&
+          ressource.address !== null &&
+          `${ressource.address}`.trim() !== ""
+            ? `${ressource.address}`.trim()
+            : null;
+        const city =
+          ressource.city !== undefined &&
+          ressource.city !== null &&
+          `${ressource.city}`.trim() !== ""
+            ? `${ressource.city}`.trim()
+            : null;
+        const postalCode =
+          ressource.postalCode !== undefined &&
+          ressource.postalCode !== null &&
+          `${ressource.postalCode}`.trim() !== ""
+            ? `${ressource.postalCode}`.trim()
+            : null;
+
+        return {
+          ...ressource,
+          // overwrite / add normalized fields
+          latitude: safeLatitude,
+          longitude: safeLongitude,
+          address,
+          city,
+          postalCode,
+          // include tarifs (first row or null) and photos array
+          tarifs: tarifs.length > 0 ? tarifs[0] : null,
+          photos: photos || [],
+        };
+      })
+    );
+
+    res.json(enriched);
   } catch (error) {
     console.error(error);
     res
