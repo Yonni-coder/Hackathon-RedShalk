@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes"
 import Wrapper from "@/components/container/wrapper"
 import NextTopLoader from "nextjs-toploader"
 import { Toaster } from "sonner"
+import SessionProvider from "@/components/session-provider"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,7 +33,8 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Toaster position="top-center" richColors />
-        <ThemeProvider
+        <SessionProvider>
+          <ThemeProvider
           attribute="class"
           defaultTheme="dark"
           enableSystem
@@ -53,6 +55,8 @@ export default function RootLayout({
             />
             {isExcludePage ? children : <Wrapper>{children}</Wrapper>}
         </ThemeProvider>
+        </SessionProvider>
+        
       </body>
     </html>
   );
